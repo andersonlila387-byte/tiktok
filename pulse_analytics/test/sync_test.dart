@@ -86,6 +86,21 @@ void main() {
     reopened.dispose();
   });
 
+  test('a server problem at login is not reported as a wrong PIN', () async {
+    final p = AnalyticsProvider(
+      ApiStorageService('http://x',
+          client: MockClient((_) async => http.Response(
+              '{"error":"Storage not configured: connect an Upstash Redis database."}',
+              500))),
+      pollInterval: null,
+    );
+    await expectLater(
+      p.login('1234'),
+      throwsA(isA<StorageException>().having(
+          (e) => e.message, 'message', contains('Storage not configured'))),
+    );
+  });
+
   test('saving without signing in is refused and reported', () async {
     final server = FakeServer();
     final p = providerFor(server);

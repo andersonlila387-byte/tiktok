@@ -144,10 +144,10 @@ class ApiStorageService extends StorageService {
           (jsonDecode(res.body) as Map<String, dynamic>)['token'] as String;
       return true;
     }
-    if (res.statusCode == 429) {
-      throw StorageException('Too many attempts. Try again in a minute.');
-    }
-    return false;
+    // Only a 401 means the PIN was wrong; anything else is a server problem
+    // and the user should hear what it is.
+    if (res.statusCode == 401) return false;
+    throw StorageException(_error(res));
   }
 
   Map<String, String> get _auth => {

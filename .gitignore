@@ -1,0 +1,16 @@
+# Figures saved by the admin live here at runtime
+server/data/
+
+# Flutter / Dart
+pulse_analytics/.dart_tool/
+pulse_analytics/build/
+pulse_analytics/.flutter-plugins-dependencies
+pulse_analytics/.idea/
+pulse_analytics/android/local.properties
+pulse_analytics/android/.gradle/
+
+# Tooling
+node_modules/
+.claude/settings.local.json
+*.log
+.DS_Store

@@ -1,0 +1,11 @@
+{
+  "name": "analytics-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Stores the analytics dashboard figures and serves the web app",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test"
+  },
+  "engines": { "node": ">=18" }
+}

@@ -1,0 +1,11 @@
+{
+  "name": "analytics-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Analytics dashboard: Flutter web app in public/, API in api/",
+  "scripts": {
+    "test": "node --test tests/api.test.js server/server.test.js",
+    "start": "node server/server.js"
+  },
+  "engines": { "node": ">=20" }
+}

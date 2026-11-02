@@ -60,74 +60,11 @@ function clearData() {
   current = null;
 }
 
-/** Checks the payload has the shape the app reads, so a bad request cannot
- *  break every visitor's dashboard. */
-function validate(data) {
-  const isObj = (v) => v && typeof v === 'object' && !Array.isArray(v);
-  const nums = (v, n) =>
-    Array.isArray(v) && (n == null || v.length === n) && v.every(Number.isFinite);
-  if (!isObj(data)) return 'data must be an object';
-  if (!nums(data.followers) || data.followers.length < 2) return 'followers';
-  if (!isObj(data.metrics)) return 'metrics';
-  for (const [k, v] of Object.entries(data.metrics)) {
-    if (!nums(v) || v.length !== data.followers.length - 1) return `metrics.${k}`;
-  }
-  if (![data.male, data.female].every(Number.isFinite)) return 'gender';
-  if (data.male < 0 || data.female < 0 || data.male + data.female > 100.0001) {
-    return 'gender must add up to at most 100';
-  }
-  if (!isObj(data.ages) || !Object.values(data.ages).every(Number.isFinite)) return 'ages';
-  for (const key of ['locations', 'traffic']) {
-    const ok =
-      Array.isArray(data[key]) &&
-      data[key].every((e) => e && typeof e.name === 'string' && Number.isFinite(e.percent));
-    if (!ok) return key;
-  }
-  for (const key of ['topWords', 'queries']) {
-    const ok =
-      Array.isArray(data[key]) &&
-      data[key].every((e) => e && typeof e.word === 'string' && Number.isFinite(e.count));
-    if (!ok) return key;
-  }
-  if (!nums(data.hourly, 24) || !nums(data.viewerHourly, 24)) return 'hourly';
-  if (!nums(data.weekday, 7) || !nums(data.viewerWeekday, 7)) return 'weekday';
-  if (!Array.isArray(data.dashMetrics) || !data.dashMetrics.every((e) => typeof e === 'string')) {
-    return 'dashMetrics';
-  }
-  return null;
-}
-
-// --------------------------------------------------------------------- auth
-
-function sign(payload) {
-  return crypto.createHmac('sha256', SECRET).update(payload).digest('base64url');
-}
-
-function issueToken() {
-  const payload = Buffer.from(JSON.stringify({ exp: Date.now() + TOKEN_TTL_MS })).toString('base64url');
-  return `${payload}.${sign(payload)}`;
-}
-
-function tokenValid(header) {
-  const m = /^Bearer (.+)$/.exec(header || '');
-  if (!m) return false;
-  const [payload, sig] = m[1].split('.');
-  if (!payload || !sig) return false;
-  const want = Buffer.from(sign(payload));
-  const got = Buffer.from(sig);
-  if (want.length !== got.length || !crypto.timingSafeEqual(want, got)) return false;
-  try {
-    return JSON.parse(Buffer.from(payload, 'base64url').toString()).exp > Date.now();
-  } catch (_) {
-    return false;
-  }
-}
-
-function pinMatches(pin) {
-  const a = crypto.createHash('sha256').update(String(pin)).digest();
-  const b = crypto.createHash('sha256').update(ADMIN_PIN).digest();
-  return crypto.timingSafeEqual(a, b);
-}
+const { validate, makeAuth } = require('../api/_lib');
+const auth = makeAuth(SECRET, ADMIN_PIN);
+const pinMatches = auth.pinMatches;
+const issueToken = auth.issueToken;
+const tokenValid = auth.tokenValid;
 
 /** Five wrong PINs from one address block further tries for a minute. */
 const attempts = new Map();

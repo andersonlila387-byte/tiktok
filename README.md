@@ -23,6 +23,19 @@ ADMIN_PIN=choose-a-pin node server.js     # http://localhost:8080
 
 Without `ADMIN_PIN` the PIN is `1234`; set your own before going live.
 
+## Host on Vercel
+
+1. Import this GitHub repo at vercel.com/new (leave every build setting empty; the
+   app is prebuilt in `public/` and the API is in `api/`).
+2. In the project: **Storage > Create > Upstash Redis** (free), connect it to the
+   project.
+3. **Settings > Environment Variables**: add `ADMIN_PIN` (your admin password)
+   and `TOKEN_SECRET` (a long random string, e.g. `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`).
+4. **Deployments > Redeploy** so the variables take effect.
+
+After changing the app, run `bash scripts/build-web.sh`, commit `public/`, and
+push; Vercel redeploys automatically.
+
 ## Troubleshooting: "Could not reach the server"
 
 The admin PIN is checked by the server, so the server must be running

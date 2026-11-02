@@ -23,6 +23,13 @@ ADMIN_PIN=choose-a-pin node server.js     # http://localhost:8080
 
 Without `ADMIN_PIN` the PIN is `1234`; set your own before going live.
 
+## Troubleshooting: "Could not reach the server"
+
+The admin PIN is checked by the server, so the server must be running
+(`node server/server.js`). Open the dashboard at `http://localhost:8080`. If you
+start the app with `flutter run`, it looks for the server at
+`http://localhost:8080`; use `--dart-define=API_URL=...` to point elsewhere.
+
 ## Admin access
 
 Long-press the **Analytics** title at the top of the dashboard and enter the

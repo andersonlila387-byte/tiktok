@@ -145,12 +145,23 @@ function noteFailure(ip) {
 
 // --------------------------------------------------------------------- http
 
+/** The dashboard may be opened from another address while developing (for
+ *  example `flutter run`). Admin calls carry a bearer token, not cookies, so
+ *  allowing any origin does not expose a signed-in session. */
+const CORS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, If-None-Match',
+  'Access-Control-Allow-Methods': 'GET, PUT, POST, DELETE, OPTIONS',
+  'Access-Control-Expose-Headers': 'ETag',
+};
+
 function send(res, status, body, headers = {}) {
   const isJson = typeof body === 'object' && !Buffer.isBuffer(body);
   const payload = isJson ? JSON.stringify(body) : body;
   res.writeHead(status, {
     'Content-Type': isJson ? 'application/json; charset=utf-8' : 'text/plain; charset=utf-8',
     'Cache-Control': 'no-store',
+    ...CORS,
     ...headers,
   });
   res.end(payload);
@@ -257,7 +268,13 @@ function serveStatic(req, res, pathname) {
 const server = http.createServer(async (req, res) => {
   const { pathname } = new URL(req.url, 'http://localhost');
   try {
-    if (pathname.startsWith('/api/')) return await api(req, res, pathname);
+    if (pathname.startsWith('/api/')) {
+      if (req.method === 'OPTIONS') {
+        res.writeHead(204, { ...CORS, 'Access-Control-Max-Age': '86400' });
+        return res.end();
+      }
+      return await api(req, res, pathname);
+    }
     if (req.method !== 'GET' && req.method !== 'HEAD') return send(res, 405, 'Method not allowed');
     return serveStatic(req, res, pathname);
   } catch (e) {

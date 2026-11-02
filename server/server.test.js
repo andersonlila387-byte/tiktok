@@ -107,6 +107,16 @@ test('reset removes saved data', async () => {
   assert.strictEqual((await fetch(`${base}/api/analytics`)).status, 404);
 });
 
+test('other origins can call the API (preflight and ETag)', async () => {
+  const pre = await fetch(`${base}/api/login`, {
+    method: 'OPTIONS',
+    headers: { Origin: 'http://localhost:5555', 'Access-Control-Request-Method': 'POST' },
+  });
+  assert.strictEqual(pre.status, 204);
+  assert.strictEqual(pre.headers.get('access-control-allow-origin'), '*');
+  assert.match(pre.headers.get('access-control-allow-headers'), /Authorization/);
+});
+
 test('repeated wrong PINs are throttled', async () => {
   let last;
   for (let i = 0; i < 6; i++) last = await login('bad');

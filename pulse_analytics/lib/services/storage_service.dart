@@ -135,7 +135,9 @@ class ApiStorageService extends StorageService {
           )
           .timeout(const Duration(seconds: 8));
     } catch (_) {
-      throw StorageException('Could not reach the server.');
+      throw StorageException(
+          'Could not reach the server at $baseUrl. Start it with: '
+          'node server/server.js');
     }
     if (res.statusCode == 200) {
       _token =

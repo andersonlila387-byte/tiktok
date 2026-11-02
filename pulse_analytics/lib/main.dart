@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -10,8 +11,15 @@ import 'services/storage_service.dart';
 /// `--dart-define=API_URL=https://example.com` when hosting them apart.
 const _apiUrl = String.fromEnvironment('API_URL');
 
+/// Where `node server/server.js` listens by default.
+const _devServer = 'http://localhost:8080';
+
 void main() {
-  final base = _apiUrl.isNotEmpty ? _apiUrl : Uri.base.origin;
+  // Under `flutter run` the page is not served by our server, so look for it
+  // on its usual local address.
+  final base = _apiUrl.isNotEmpty
+      ? _apiUrl
+      : (kDebugMode ? _devServer : Uri.base.origin);
   runApp(
     ChangeNotifierProvider(
       create: (_) => AnalyticsProvider(ApiStorageService(base))..load(),

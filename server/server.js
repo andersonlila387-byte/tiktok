@@ -1,12 +1,10 @@
 // Analytics backend: stores the dashboard figures, lets the admin change them,
 // and serves the built Flutter web app. No npm dependencies.
 //
-//   ADMIN_PIN     admin password (required in production; defaults to 1234)
+//   ADMIN_PASSWORD  optional; overrides the password set in api/_lib.js
 //   PORT          listen port (default 8080)
 //   DATA_FILE     where figures are stored (default ./data/analytics.json)
 //   WEB_DIR       built Flutter web app (default ../pulse_analytics/build/web)
-//   TOKEN_SECRET  signs login tokens (default: random per start, so admin
-//                 sessions end when the server restarts)
 
 const http = require('http');
 const fs = require('fs');
@@ -14,7 +12,6 @@ const path = require('path');
 const crypto = require('crypto');
 
 const PORT = Number(process.env.PORT || 8080);
-const ADMIN_PIN = process.env.ADMIN_PIN || '1234';
 const DATA_FILE = path.resolve(
   process.env.DATA_FILE || path.join(__dirname, 'data', 'analytics.json'),
 );
@@ -22,13 +19,7 @@ const WEB_DIR = path.resolve(
   process.env.WEB_DIR ||
     path.join(__dirname, '..', 'pulse_analytics', 'build', 'web'),
 );
-const SECRET = process.env.TOKEN_SECRET || crypto.randomBytes(32).toString('hex');
-const TOKEN_TTL_MS = 12 * 60 * 60 * 1000;
 const MAX_BODY = 8 * 1024 * 1024;
-
-if (!process.env.ADMIN_PIN) {
-  console.warn('ADMIN_PIN not set: using the default PIN 1234. Set it before going live.');
-}
 
 // ------------------------------------------------------------------ storage
 
@@ -60,11 +51,10 @@ function clearData() {
   current = null;
 }
 
-const { validate, makeAuth } = require('../api/_lib');
-const auth = makeAuth(SECRET, ADMIN_PIN);
-const pinMatches = auth.pinMatches;
-const issueToken = auth.issueToken;
-const tokenValid = auth.tokenValid;
+const { validate, makeAuth, DEFAULT_PASSWORD } = require('../api/_lib');
+const auth = makeAuth(
+  process.env.ADMIN_PASSWORD || process.env.ADMIN_PIN || DEFAULT_PASSWORD,
+);
 
 /** Five wrong PINs from one address block further tries for a minute. */
 const attempts = new Map();
@@ -132,12 +122,12 @@ async function api(req, res, pathname) {
   if (pathname === '/api/login' && req.method === 'POST') {
     if (throttled(ip)) return send(res, 429, { error: 'Too many attempts. Try again in a minute.' });
     const body = await readBody(req);
-    if (body && pinMatches(body.pin ?? '')) {
+    if (body && auth.passwordMatches(body.password ?? body.pin ?? '')) {
       attempts.delete(ip);
-      return send(res, 200, { token: issueToken() });
+      return send(res, 200, { ok: true });
     }
     noteFailure(ip);
-    return send(res, 401, { error: 'Incorrect PIN' });
+    return send(res, 401, { error: 'Incorrect password' });
   }
 
   if (pathname === '/api/analytics') {
@@ -147,7 +137,7 @@ async function api(req, res, pathname) {
       if (req.headers['if-none-match'] === tag) return send(res, 304, '', { ETag: tag });
       return send(res, 200, current, { ETag: tag });
     }
-    if (!tokenValid(req.headers.authorization)) return send(res, 401, { error: 'Admin sign-in required' });
+    if (!auth.authorised(req.headers.authorization)) return send(res, 401, { error: 'Admin sign-in required' });
     if (req.method === 'PUT') {
       const body = await readBody(req);
       const problem = validate(body && body.data);

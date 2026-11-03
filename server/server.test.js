@@ -13,28 +13,48 @@ let proc;
 
 function start() {
   proc = spawn(process.execPath, [path.join(__dirname, 'server.js')], {
-    env: { ...process.env, PORT: String(port), ADMIN_PIN: '4321', DATA_FILE: dataFile, TOKEN_SECRET: 'test' },
+    env: { ...process.env, PORT: String(port), ADMIN_PIN: '4321', DATA_FILE: dataFile },
     stdio: 'ignore',
   });
   return new Promise((resolve) => setTimeout(resolve, 600));
 }
 
 const zeros = (n) => Array(n).fill(0);
-const sample = (male = 56) => ({
-  topWords: [],
-  followers: Array(31).fill(120),
-  metrics: { Likes: zeros(30), 'Post views': zeros(30) },
-  male,
-  female: 44,
-  ages: { '18-24': 50 },
-  locations: [{ name: 'US', percent: 50 }],
-  hourly: zeros(24),
-  weekday: zeros(7),
-  viewerHourly: zeros(24),
-  viewerWeekday: zeros(7),
-  traffic: [],
+const post = (views = 39) => ({
+  id: 'p1',
+  caption: 'Lions',
+  thumbnailUrl: '',
+  postedAt: '2024-07-03T11:52:00.000',
+  updatedAt: '2026-11-02T10:00:00.000',
+  durationSec: 55.87,
+  views,
+  likes: 6,
+  comments: 0,
+  shares: 0,
+  saves: 0,
+  playTimeSec: 383,
+  avgWatchSec: 8.5,
+  fullWatchPct: 8.89,
+  newFollowers: 0,
+  avgWatchedPct: 15,
+  stopSec: 2,
+  likePeakSec: 2,
+  totalViewers: 28,
+  viewersChange: -1,
+  newViewers: 12,
+  followerViewers: 0,
+  male: 0,
+  female: 5,
+  other: 2,
+  ages: [3, 2, 1, 1, 0],
+  locations: [{ name: 'US', count: 4 }],
+  traffic: [{ name: 'For You', count: 9 }],
   queries: [],
-  dashMetrics: ['Comments'],
+  topWords: [{ name: 'wow', count: 3 }],
+});
+const sample = (views = 39) => ({
+  posts: [post(views)],
+  inspiration: { trending: [{ caption: 'c', likes: '1M', author: 'a' }] },
 });
 
 async function login(pin) {
@@ -60,14 +80,14 @@ test('nothing saved yet returns 404', async () => {
   assert.strictEqual((await fetch(`${base}/api/analytics`)).status, 404);
 });
 
-test('wrong PIN is rejected, right PIN gives a token', async () => {
+test('wrong password is rejected, right one is accepted', async () => {
   assert.strictEqual((await login('0000')).status, 401);
   const ok = await login('4321');
   assert.strictEqual(ok.status, 200);
-  assert.ok(ok.body.token);
+  assert.strictEqual(ok.body.ok, true);
 });
 
-test('writing needs a valid token', async () => {
+test('writing needs the password', async () => {
   assert.strictEqual((await put('nope', sample())).status, 401);
   const res = await fetch(`${base}/api/analytics`, { method: 'PUT', body: '{}' });
   assert.strictEqual(res.status, 401);
@@ -75,10 +95,10 @@ test('writing needs a valid token', async () => {
 
 test('admin edits are public, validated and survive a restart', async () => {
   const { body } = await login('4321');
-  assert.strictEqual((await put(body.token, sample(20))).status, 200);
+  assert.strictEqual((await put('4321', sample(20))).status, 200);
 
   const pub = await fetch(`${base}/api/analytics`);
-  assert.strictEqual((await pub.json()).data.male, 20);
+  assert.strictEqual((await pub.json()).data.posts[0].views, 20);
 
   // 304 when nothing changed.
   const again = await fetch(`${base}/api/analytics`, {
@@ -87,21 +107,21 @@ test('admin edits are public, validated and survive a restart', async () => {
   assert.strictEqual(again.status, 304);
 
   // Gender over 100 and malformed series are refused and change nothing.
-  assert.strictEqual((await put(body.token, { ...sample(), male: 80 })).status, 400);
-  assert.strictEqual((await put(body.token, { ...sample(), hourly: [1] })).status, 400);
-  assert.strictEqual((await (await fetch(`${base}/api/analytics`)).json()).data.male, 20);
+  assert.strictEqual((await put('4321', { ...sample(), posts: [{ ...post(), views: "x" }] })).status, 400);
+  assert.strictEqual((await put('4321', { ...sample(), posts: [{ ...post(), ages: "no" }] })).status, 400);
+  assert.strictEqual((await (await fetch(`${base}/api/analytics`)).json()).data.posts[0].views, 20);
 
   proc.kill();
   await new Promise((r) => setTimeout(r, 300));
   await start();
-  assert.strictEqual((await (await fetch(`${base}/api/analytics`)).json()).data.male, 20);
+  assert.strictEqual((await (await fetch(`${base}/api/analytics`)).json()).data.posts[0].views, 20);
 });
 
 test('reset removes saved data', async () => {
   const { body } = await login('4321');
   const del = await fetch(`${base}/api/analytics`, {
     method: 'DELETE',
-    headers: { Authorization: `Bearer ${body.token}` },
+    headers: { Authorization: `Bearer ${'4321'}` },
   });
   assert.strictEqual(del.status, 200);
   assert.strictEqual((await fetch(`${base}/api/analytics`)).status, 404);
@@ -117,7 +137,7 @@ test('other origins can call the API (preflight and ETag)', async () => {
   assert.match(pre.headers.get('access-control-allow-headers'), /Authorization/);
 });
 
-test('repeated wrong PINs are throttled', async () => {
+test('repeated wrong passwords are throttled', async () => {
   let last;
   for (let i = 0; i < 6; i++) last = await login('bad');
   assert.strictEqual(last.status, 429);

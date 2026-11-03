@@ -3,7 +3,10 @@
 
 const crypto = require('crypto');
 
-const TOKEN_TTL_MS = 12 * 60 * 60 * 1000;
+/** The admin password. Change it here and push; nothing else to configure.
+ *  (An ADMIN_PASSWORD environment variable overrides it if you ever want that.)
+ *  Keep the GitHub repo private, since anyone who can read the code sees it. */
+const DEFAULT_PASSWORD = '1234';
 const KEY = 'analytics:data';
 const MAX_ATTEMPTS = 5;
 
@@ -17,66 +20,75 @@ const CORS = {
   'Access-Control-Expose-Headers': 'ETag',
 };
 
+const POST_NUMBERS = [
+  'durationSec', 'views', 'likes', 'comments', 'shares', 'saves', 'playTimeSec',
+  'avgWatchSec', 'fullWatchPct', 'newFollowers', 'avgWatchedPct', 'stopSec',
+  'likePeakSec', 'totalViewers', 'viewersChange', 'newViewers', 'followerViewers',
+  'male', 'female', 'other',
+];
+const POST_TALLIES = ['locations', 'traffic', 'queries', 'topWords'];
+const MAX_POSTS = 500;
+/** Uploaded pictures are saved inside the figures, so keep the file under
+ *  GitHub's 1 MB inline-read limit. */
+const MAX_DATA_BYTES = 900 * 1024;
+
 /** Checks the payload has the shape the app reads, so a bad request cannot
- *  break every visitor's dashboard. Returns a problem description or null. */
+ *  break every visitor's page. Returns a problem description or null. */
 function validate(data) {
   const isObj = (v) => v && typeof v === 'object' && !Array.isArray(v);
-  const nums = (v, n) =>
-    Array.isArray(v) && (n == null || v.length === n) && v.every(Number.isFinite);
   if (!isObj(data)) return 'data must be an object';
-  if (!nums(data.followers) || data.followers.length < 2) return 'followers';
-  if (!isObj(data.metrics)) return 'metrics';
-  for (const [k, v] of Object.entries(data.metrics)) {
-    if (!nums(v) || v.length !== data.followers.length - 1) return `metrics.${k}`;
+  if (!Array.isArray(data.posts) || data.posts.length > MAX_POSTS) return 'posts';
+  const ids = new Set();
+  for (const [i, p] of data.posts.entries()) {
+    const at = `posts[${i}]`;
+    if (!isObj(p)) return at;
+    if (typeof p.id !== 'string' || !p.id || ids.has(p.id)) return `${at}.id`;
+    ids.add(p.id);
+    for (const k of ['caption', 'thumbnailUrl']) {
+      if (typeof p[k] !== 'string') return `${at}.${k}`;
+    }
+    for (const k of ['postedAt', 'updatedAt']) {
+      if (typeof p[k] !== 'string' || Number.isNaN(Date.parse(p[k]))) return `${at}.${k}`;
+    }
+    for (const k of POST_NUMBERS) {
+      if (!Number.isFinite(p[k])) return `${at}.${k}`;
+    }
+    if (!Array.isArray(p.ages) || !p.ages.every(Number.isFinite)) return `${at}.ages`;
+    for (const k of POST_TALLIES) {
+      const ok =
+        Array.isArray(p[k]) &&
+        p[k].every((e) => e && typeof e.name === 'string' && Number.isFinite(e.count));
+      if (!ok) return `${at}.${k}`;
+    }
   }
-  if (![data.male, data.female].every(Number.isFinite)) return 'gender';
-  if (data.male < 0 || data.female < 0 || data.male + data.female > 100.0001) {
-    return 'gender must add up to at most 100';
+  if (!isObj(data.inspiration)) return 'inspiration';
+  if (Buffer.byteLength(JSON.stringify(data)) > MAX_DATA_BYTES) {
+    return 'too many or too large pictures (limit about 900 KB in total); remove some';
   }
-  if (!isObj(data.ages) || !Object.values(data.ages).every(Number.isFinite)) return 'ages';
-  for (const key of ['locations', 'traffic']) {
+  for (const [k, list] of Object.entries(data.inspiration)) {
     const ok =
-      Array.isArray(data[key]) &&
-      data[key].every((e) => e && typeof e.name === 'string' && Number.isFinite(e.percent));
-    if (!ok) return key;
-  }
-  for (const key of ['topWords', 'queries']) {
-    const ok =
-      Array.isArray(data[key]) &&
-      data[key].every((e) => e && typeof e.word === 'string' && Number.isFinite(e.count));
-    if (!ok) return key;
-  }
-  if (!nums(data.hourly, 24) || !nums(data.viewerHourly, 24)) return 'hourly';
-  if (!nums(data.weekday, 7) || !nums(data.viewerWeekday, 7)) return 'weekday';
-  if (!Array.isArray(data.dashMetrics) || !data.dashMetrics.every((e) => typeof e === 'string')) {
-    return 'dashMetrics';
+      Array.isArray(list) &&
+      list.every(
+        (e) =>
+          e &&
+          ['caption', 'likes', 'author'].every((f) => typeof e[f] === 'string') &&
+          ['image', 'avatar'].every((f) => e[f] === undefined || typeof e[f] === 'string'),
+      );
+    if (!ok) return `inspiration.${k}`;
   }
   return null;
 }
 
-/** Login tokens: signed, expiring, no database needed. */
-function makeAuth(secret, pin) {
-  const sign = (payload) => crypto.createHmac('sha256', secret).update(payload).digest('base64url');
+/** Admin check: the password typed at sign-in is sent with every save and
+ *  compared with the one in the code. */
+function makeAuth(password) {
   const hash = (v) => crypto.createHash('sha256').update(String(v)).digest();
+  const matches = (entered) => crypto.timingSafeEqual(hash(entered), hash(password));
   return {
-    pinMatches: (entered) => crypto.timingSafeEqual(hash(entered), hash(pin)),
-    issueToken() {
-      const payload = Buffer.from(JSON.stringify({ exp: Date.now() + TOKEN_TTL_MS })).toString('base64url');
-      return `${payload}.${sign(payload)}`;
-    },
-    tokenValid(header) {
-      const m = /^Bearer (.+)$/.exec(header || '');
-      if (!m) return false;
-      const [payload, sig] = m[1].split('.');
-      if (!payload || !sig) return false;
-      const want = Buffer.from(sign(payload));
-      const got = Buffer.from(sig);
-      if (want.length !== got.length || !crypto.timingSafeEqual(want, got)) return false;
-      try {
-        return JSON.parse(Buffer.from(payload, 'base64url').toString()).exp > Date.now();
-      } catch (_) {
-        return false;
-      }
+    passwordMatches: matches,
+    authorised(header) {
+      const m = /^Bearer (.*)$/.exec(header || '');
+      return !!m && matches(m[1]);
     },
   };
 }
@@ -141,27 +153,131 @@ function memoryStore() {
   };
 }
 
+/** The figures kept as one JSON file (data/analytics.json) on a separate
+ *  branch of the GitHub repo, through GitHub's contents API. No database to
+ *  set up; the branch is created on the first save. Reads are cached for a few
+ *  seconds so polling visitors do not exhaust GitHub's rate limit. */
+function githubStore({ token, repo, branch = 'data', file = 'data/analytics.json', api = 'https://api.github.com' }) {
+  const CACHE_MS = 5000;
+  let cache = null; // { at, value, sha }
+  const throttle = memoryStore(); // login attempts only live in this process
+
+  async function gh(method, path, body) {
+    const res = await fetch(`${api}/repos/${repo}${path}`, {
+      method,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/vnd.github+json',
+        'User-Agent': 'analytics-dashboard',
+        'Content-Type': 'application/json',
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    const text = await res.text();
+    let json = null;
+    try { json = text ? JSON.parse(text) : null; } catch (_) { /* not JSON */ }
+    return { status: res.status, json };
+  }
+
+  const fail = (what, r) => {
+    const why = (r.json && r.json.message) || `HTTP ${r.status}`;
+    return new Error(`GitHub ${what} failed: ${why}`);
+  };
+
+  async function load() {
+    const r = await gh('GET', `/contents/${file}?ref=${encodeURIComponent(branch)}`);
+    if (r.status === 404) return { value: null, sha: null };
+    if (r.status !== 200) throw fail('read', r);
+    const value = JSON.parse(Buffer.from(r.json.content, 'base64').toString('utf8'));
+    return { value, sha: r.json.sha };
+  }
+
+  async function ensureBranch() {
+    if ((await gh('GET', `/git/ref/heads/${encodeURIComponent(branch)}`)).status === 200) return;
+    const repoInfo = await gh('GET', '');
+    if (repoInfo.status !== 200) throw fail('lookup', repoInfo);
+    const base = await gh('GET', `/git/ref/heads/${encodeURIComponent(repoInfo.json.default_branch)}`);
+    if (base.status !== 200) throw fail('lookup', base);
+    const made = await gh('POST', '/git/refs', { ref: `refs/heads/${branch}`, sha: base.json.object.sha });
+    if (made.status !== 201 && made.status !== 422) throw fail('branch creation', made);
+  }
+
+  async function read() {
+    if (cache && Date.now() - cache.at < CACHE_MS) return cache;
+    const fresh = await load();
+    cache = { at: Date.now(), ...fresh };
+    return cache;
+  }
+
+  async function write(value) {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const current = await load();
+      if (current.sha === null) await ensureBranch();
+      const body = {
+        message: value === null ? 'Reset analytics data' : 'Update analytics data',
+        branch,
+        sha: current.sha || undefined,
+      };
+      let r;
+      if (value === null) {
+        if (!current.sha) { cache = { at: Date.now(), value: null, sha: null }; return; }
+        r = await gh('DELETE', `/contents/${file}`, body);
+      } else {
+        body.content = Buffer.from(JSON.stringify(value)).toString('base64');
+        r = await gh('PUT', `/contents/${file}`, body);
+      }
+      if (r.status === 200 || r.status === 201) {
+        cache = { at: Date.now(), value, sha: r.json && r.json.content ? r.json.content.sha : null };
+        return;
+      }
+      // Someone saved in between (409/422): reload the file's version and retry.
+      if (r.status !== 409 && r.status !== 422) throw fail('save', r);
+    }
+    throw new Error('GitHub save failed: the file kept changing, try again');
+  }
+
+  return {
+    async get() { return (await read()).value; },
+    set: (value) => write(value),
+    del: () => write(null),
+    failures: throttle.failures,
+    noteFailure: throttle.noteFailure,
+    clearFailures: throttle.clearFailures,
+  };
+}
+
 let memory;
 
 /** Settings from the environment, or {error} when something is missing. */
 function config(env = process.env) {
-  const pin = env.ADMIN_PIN;
-  const secret = env.TOKEN_SECRET;
-  if (!pin || !secret) {
-    return { error: 'Server not configured: set ADMIN_PIN and TOKEN_SECRET.' };
-  }
+  const password = env.ADMIN_PASSWORD || env.ADMIN_PIN || DEFAULT_PASSWORD;
   const url = env.UPSTASH_REDIS_REST_URL || env.KV_REST_API_URL;
   const token = env.UPSTASH_REDIS_REST_TOKEN || env.KV_REST_API_TOKEN;
+  const ghToken = env.GITHUB_TOKEN;
+  // Vercel tells every deployment which repo it was built from.
+  const repo =
+    env.GITHUB_REPO ||
+    (env.VERCEL_GIT_REPO_OWNER && env.VERCEL_GIT_REPO_SLUG
+      ? `${env.VERCEL_GIT_REPO_OWNER}/${env.VERCEL_GIT_REPO_SLUG}`
+      : '');
   let store;
   if (url && token) {
     store = redisStore(url, token);
+  } else if (ghToken) {
+    if (!repo) return { error: 'Storage not configured: set GITHUB_REPO to owner/name.' };
+    store = githubStore({
+      token: ghToken,
+      repo,
+      branch: env.GITHUB_BRANCH || 'data',
+      api: env.GITHUB_API_URL || 'https://api.github.com',
+    });
   } else if (env.VERCEL) {
     // Memory would silently lose edits between requests when hosted.
-    return { error: 'Storage not configured: connect an Upstash Redis database.' };
+    return { error: 'Storage not configured: set GITHUB_TOKEN so figures can be saved.' };
   } else {
     store = memory ||= memoryStore();
   }
-  return { store, auth: makeAuth(secret, pin) };
+  return { store, auth: makeAuth(password) };
 }
 
 // --------------------------------------------------------------------- http
@@ -209,6 +325,8 @@ module.exports = {
   MAX_ATTEMPTS,
   validate,
   makeAuth,
+  DEFAULT_PASSWORD,
+  MAX_DATA_BYTES,
   memoryStore,
   config,
   send,

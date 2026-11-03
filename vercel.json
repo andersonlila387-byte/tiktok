@@ -2,7 +2,17 @@
   "headers": [
     {
       "source": "/(index.html|flutter_bootstrap.js|flutter_service_worker.js|main.dart.js|manifest.json|version.json)",
-      "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache"
+        }
+      ]
     }
-  ]
+  ],
+  "git": {
+    "deploymentEnabled": {
+      "data": false
+    }
+  }
 }

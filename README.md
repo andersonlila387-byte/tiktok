@@ -23,15 +23,24 @@ ADMIN_PIN=choose-a-pin node server.js     # http://localhost:8080
 
 Without `ADMIN_PIN` the PIN is `1234`; set your own before going live.
 
-## Host on Vercel
+## Host on Vercel (no database)
+
+The figures are saved as one JSON file, `data/analytics.json`, on a separate
+`data` branch of this GitHub repo. Nothing else to set up.
 
 1. Import this GitHub repo at vercel.com/new (leave every build setting empty; the
    app is prebuilt in `public/` and the API is in `api/`).
-2. In the project: **Storage > Create > Upstash Redis** (free), connect it to the
-   project.
-3. **Settings > Environment Variables**: add `ADMIN_PIN` (your admin password)
-   and `TOKEN_SECRET` (a long random string, e.g. `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`).
+2. On GitHub: **Settings > Developer settings > Personal access tokens > Fine-grained
+   tokens > Generate**. Pick this repository only, give it **Contents: Read and write**,
+   and copy the token.
+3. In Vercel: **Settings > Environment Variables**, add `ADMIN_PIN` (your admin password)
+   and `GITHUB_TOKEN` (the token from step 2).
 4. **Deployments > Redeploy** so the variables take effect.
+
+Saves appear for everyone within a few seconds. The `data` branch does not trigger
+deployments (see `vercel.json`). Optional: `GITHUB_REPO` (owner/name) and
+`GITHUB_BRANCH` if the defaults are wrong, `TOKEN_SECRET` to keep admin sessions
+across redeploys.
 
 After changing the app, run `bash scripts/build-web.sh`, commit `public/`, and
 push; Vercel redeploys automatically.

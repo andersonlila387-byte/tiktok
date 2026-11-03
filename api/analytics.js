@@ -20,7 +20,7 @@ module.exports = async (req, res) => {
     if (req.method !== 'PUT' && req.method !== 'DELETE') {
       return lib.send(res, 405, { error: 'Method not allowed' });
     }
-    if (!cfg.auth.tokenValid(req.headers.authorization)) {
+    if (!cfg.auth.authorised(req.headers.authorization)) {
       return lib.send(res, 401, { error: 'Admin sign-in required' });
     }
 

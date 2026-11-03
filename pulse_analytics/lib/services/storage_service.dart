@@ -14,7 +14,7 @@ abstract class StorageService {
   /// Figures saved by someone else since the last load, or null if unchanged.
   Future<AnalyticsData?> poll() async => null;
 
-  /// Signs the admin in; later [save] and [clear] calls need it.
+  /// Checks the admin password; later [save] and [clear] calls reuse it.
   Future<bool> login(String pin);
 
   /// Throws [StorageException] when the figures could not be saved.
@@ -32,11 +32,11 @@ class StorageException implements Exception {
 }
 
 /// Keeps the figures in the browser only. Used by tests and as the offline
-/// cache; the admin PIN is checked on the device.
+/// cache; the admin password is checked on the device.
 class LocalStorageService extends StorageService {
   LocalStorageService({this.pin = '1234'});
 
-  static const _key = 'analytics_data_v4';
+  static const _key = 'analytics_data_v5';
   final String pin;
 
   @override
@@ -131,7 +131,7 @@ class ApiStorageService extends StorageService {
           .post(
             Uri.parse('$baseUrl/api/login'),
             headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({'pin': pin}),
+            body: jsonEncode({'password': pin}),
           )
           .timeout(const Duration(seconds: 8));
     } catch (_) {
@@ -140,11 +140,10 @@ class ApiStorageService extends StorageService {
           'node server/server.js');
     }
     if (res.statusCode == 200) {
-      _token =
-          (jsonDecode(res.body) as Map<String, dynamic>)['token'] as String;
+      _token = pin; // the password itself authorises later saves
       return true;
     }
-    // Only a 401 means the PIN was wrong; anything else is a server problem
+    // Only a 401 means the password was wrong; anything else is a server problem
     // and the user should hear what it is.
     if (res.statusCode == 401) return false;
     throw StorageException(_error(res));
@@ -158,7 +157,7 @@ class ApiStorageService extends StorageService {
   String _error(http.Response res) {
     if (res.statusCode == 401) {
       _token = null;
-      return 'Your admin session expired. Sign in again.';
+      return 'The admin password was not accepted. Sign in again.';
     }
     try {
       return (jsonDecode(res.body) as Map<String, dynamic>)['error'] as String;

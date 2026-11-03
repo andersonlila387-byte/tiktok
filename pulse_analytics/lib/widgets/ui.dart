@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:provider/provider.dart';
 
-import '../providers/analytics_provider.dart';
 import '../theme/app_theme.dart';
+import '../utils/image_upload.dart';
 
 /// White rounded panel used for every section.
 class TkCard extends StatelessWidget {
@@ -21,6 +20,7 @@ class TkCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      width: double.infinity,
       margin: margin,
       padding: padding,
       decoration: BoxDecoration(
@@ -44,11 +44,11 @@ class CardTitle extends StatelessWidget {
     return Row(
       children: [
         Flexible(
-          child: Text(text, style: t(20, weight: FontWeight.w700, height: 1.2)),
+          child: Text(text, style: t(17, weight: FontWeight.w700, height: 1.2)),
         ),
         if (info) ...[
           const SizedBox(width: 6),
-          const Icon(LucideIcons.info, size: 17, color: Color(0xFF6C6D72)),
+          const Icon(LucideIcons.info, size: 15, color: Color(0xFF6C6D72)),
         ],
       ],
     );
@@ -57,51 +57,18 @@ class CardTitle extends StatelessWidget {
 
 /// Small grey explanatory paragraph.
 class BodyText extends StatelessWidget {
-  const BodyText(this.text, {super.key, this.align});
+  const BodyText(this.text, {super.key, this.align, this.color});
 
   final String text;
   final TextAlign? align;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
     return Text(
       text,
       textAlign: align,
-      style: t(15, color: AppColors.muted, height: 1.3),
-    );
-  }
-}
-
-/// Rounded-rectangle filter chip (Gender / Age / Locations, Hours / Days...).
-class SquareChip extends StatelessWidget {
-  const SquareChip(this.label, this.selected, this.onTap, {super.key});
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: Container(
-        height: 32,
-        alignment: Alignment.center,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        decoration: BoxDecoration(
-          color: selected ? AppColors.accentTint : const Color(0xFFF0F0F0),
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Text(
-          label,
-          style: t(
-            15,
-            weight: FontWeight.w500,
-            color: selected ? const Color(0xFF1274D2) : AppColors.muted,
-          ),
-        ),
-      ),
+      style: t(14, color: color ?? AppColors.muted, height: 1.3),
     );
   }
 }
@@ -113,7 +80,7 @@ class PillChip extends StatelessWidget {
     this.selected,
     this.onTap, {
     super.key,
-    this.horizontal = 13,
+    this.horizontal = 16,
   });
 
   final String label;
@@ -137,7 +104,7 @@ class PillChip extends StatelessWidget {
         child: Text(
           label,
           style: t(
-            15,
+            14,
             weight: FontWeight.w500,
             color: selected ? Colors.white : AppColors.chipText,
           ),
@@ -147,84 +114,64 @@ class PillChip extends StatelessWidget {
   }
 }
 
-/// Dismissable notice card ("Update to ...").
-class NoteCard extends StatelessWidget {
-  const NoteCard({
+/// Cover image of a video: the picture when there is one, otherwise a dark
+/// placeholder. [child] is drawn over it (duration, play button).
+class VideoCover extends StatelessWidget {
+  const VideoCover({
     super.key,
-    required this.title,
-    required this.body,
-    required this.onClose,
+    required this.url,
+    required this.width,
+    required this.height,
+    this.radius = 6,
+    this.child,
   });
 
-  final String title;
-  final String body;
-  final VoidCallback onClose;
+  final String url;
+  final double width;
+  final double height;
+  final double radius;
+  final Widget? child;
 
   @override
   Widget build(BuildContext context) {
-    return TkCard(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: t(18, weight: FontWeight.w600, height: 1.2)),
-                const SizedBox(height: 6),
-                BodyText(body),
-              ],
-            ),
-          ),
-          GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: onClose,
-            child: const Padding(
-              padding: EdgeInsets.only(left: 12, top: 2),
-              child: Icon(LucideIcons.x, size: 22, color: Color(0xFF55565B)),
-            ),
-          ),
-        ],
+    final placeholder = DecoratedBox(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFF5A5C66), Color(0xFF22232A)],
+        ),
+      ),
+      child: Center(
+        child: Icon(
+          LucideIcons.video,
+          size: width * 0.28,
+          color: Colors.white.withValues(alpha: 0.35),
+        ),
       ),
     );
-  }
-}
-
-/// "7 days / 28 days / 60 days / 365 days / Custom" selector under the tabs.
-class RangeChips extends StatelessWidget {
-  const RangeChips({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final p = context.watch<AnalyticsProvider>();
-    return SizedBox(
-      height: 58,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
-        children: [
-          for (final d in AnalyticsProvider.ranges) ...[
-            PillChip(
-              '$d days',
-              !p.customRange && p.rangeDays == d,
-              () => p.setRange(d),
-            ),
-            const SizedBox(width: 8),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(radius),
+      child: SizedBox(
+        width: width,
+        height: height,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            url.trim().isEmpty
+                ? placeholder
+                : Image(
+                    image: pictureProvider(url),
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, _, _) => placeholder,
+                  ),
+            if (child != null) child!,
           ],
-          PillChip('Custom', p.customRange, () => _pickCustom(context, p)),
-        ],
+        ),
       ),
     );
   }
-
-  Future<void> _pickCustom(BuildContext context, AnalyticsProvider p) async {
-    final dates = p.windowDates;
-    final picked = await showDateRangePicker(
-      context: context,
-      firstDate: p.earliestDate,
-      lastDate: p.lastDataDate,
-      initialDateRange: DateTimeRange(start: dates.first, end: dates.last),
-    );
-    if (picked != null) p.setCustomRange(picked.start, picked.end);
-  }
 }
+
+/// Grey placeholder shown until a video has enough views for a section.
+const kNeedViewsNotice = 'Data will be shown when this video reaches 100 views.';

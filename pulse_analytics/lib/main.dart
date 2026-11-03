@@ -22,7 +22,10 @@ void main() {
       : (kDebugMode ? _devServer : Uri.base.origin);
   runApp(
     ChangeNotifierProvider(
-      create: (_) => AnalyticsProvider(ApiStorageService(base))..load(),
+      create: (_) => AnalyticsProvider(
+        ApiStorageService(base),
+        requestedPostId: Uri.base.queryParameters['v'],
+      )..load(),
       child: const PulseApp(),
     ),
   );

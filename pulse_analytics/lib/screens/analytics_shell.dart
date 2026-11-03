@@ -2,17 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:provider/provider.dart';
 
+import '../models/analytics_data.dart';
 import '../providers/analytics_provider.dart';
 import '../theme/app_theme.dart';
+import '../utils/formatters.dart';
 import '../widgets/ui.dart';
 import 'admin/admin_screen.dart';
-import 'analytics/content_screen.dart';
-import 'analytics/followers_screen.dart';
+import 'analytics/engagement_screen.dart';
 import 'analytics/inspiration_screen.dart';
-import 'analytics/live_screen.dart';
 import 'analytics/overview_screen.dart';
 import 'analytics/viewers_screen.dart';
 
+/// One video's analytics: a fixed top bar, a header that scrolls away, and a
+/// tab bar that sticks under the top bar once the header has scrolled off.
 class AnalyticsShell extends StatefulWidget {
   const AnalyticsShell({super.key});
 
@@ -22,23 +24,13 @@ class AnalyticsShell extends StatefulWidget {
 
 class _AnalyticsShellState extends State<AnalyticsShell>
     with SingleTickerProviderStateMixin {
-  static const _tabs = [
-    'Inspiration',
-    'Overview',
-    'Content',
-    'Viewers',
-    'Followers',
-    'LIVE',
-  ];
-
-  /// Tabs that show data for a chosen period.
-  static const _rangeTabs = {1, 2, 3, 4};
+  static const tabs = ['Inspiration', 'Overview', 'Viewers', 'Engagement'];
 
   late final TabController _controller = TabController(
-    length: _tabs.length,
+    length: tabs.length,
     vsync: this,
     initialIndex: 1,
-  )..addListener(() => setState(() {}));
+  );
 
   @override
   void dispose() {
@@ -49,67 +41,263 @@ class _AnalyticsShellState extends State<AnalyticsShell>
   @override
   Widget build(BuildContext context) {
     final p = context.watch<AnalyticsProvider>();
+    final post = p.loading ? null : p.post;
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        centerTitle: true,
-        toolbarHeight: 56,
-        leadingWidth: 56,
-        leading: IconButton(
-          tooltip: 'Back',
-          icon: const Icon(LucideIcons.arrowLeft, size: 26),
-          onPressed: () => Navigator.maybePop(context),
-        ),
-        // Long-press the title to reach the admin screen.
-        title: GestureDetector(
-          onLongPress: () => openAdmin(context),
-          child: Text('Analytics', style: t(18, weight: FontWeight.w700)),
-        ),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(46),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: TabBar(
-              controller: _controller,
-              isScrollable: true,
-              tabAlignment: TabAlignment.start,
-              padding: const EdgeInsets.only(left: 5),
-              labelPadding: const EdgeInsets.symmetric(horizontal: 10.5),
-              labelColor: AppColors.text,
-              unselectedLabelColor: AppColors.muted,
-              labelStyle: t(16.5, weight: FontWeight.w600),
-              unselectedLabelStyle: t(16.5, weight: FontWeight.w500),
-              indicatorColor: AppColors.text,
-              indicatorWeight: 2,
-              indicatorSize: TabBarIndicatorSize.tab,
-              overlayColor: const WidgetStatePropertyAll(Colors.transparent),
-              dividerColor: AppColors.border,
-              dividerHeight: 1,
-              tabs: [for (final tab in _tabs) Tab(text: tab, height: 45)],
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            const _TopBar(),
+            Expanded(
+              child: p.loading
+                  ? const Center(child: CircularProgressIndicator())
+                  : post == null
+                  ? const Center(
+                      child: BodyText('No videos have been posted yet.'),
+                    )
+                  : _VideoPage(post: post, controller: _controller),
             ),
-          ),
+          ],
         ),
       ),
-      body: p.loading
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                if (_rangeTabs.contains(_controller.index)) const RangeChips(),
-                Expanded(
-                  child: TabBarView(
-                    controller: _controller,
-                    children: const [
-                      InspirationScreen(),
-                      OverviewScreen(),
-                      ContentScreen(),
-                      ViewersScreen(),
-                      FollowersScreen(),
-                      LiveScreen(),
-                    ],
-                  ),
-                ),
-              ],
-            ),
     );
   }
+}
+
+class _VideoPage extends StatelessWidget {
+  const _VideoPage({required this.post, required this.controller});
+
+  final Post post;
+  final TabController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return NestedScrollView(
+      headerSliverBuilder: (context, _) => [
+        SliverToBoxAdapter(child: _VideoHeader(post: post)),
+        SliverOverlapAbsorber(
+          handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
+          sliver: SliverPersistentHeader(
+            pinned: true,
+            delegate: _TabsDelegate(controller),
+          ),
+        ),
+      ],
+      body: TabBarView(
+        controller: controller,
+        children: [
+          const InspirationScreen(key: PageStorageKey('inspiration')),
+          OverviewScreen(key: const PageStorageKey('overview'), post: post),
+          ViewersScreen(key: const PageStorageKey('viewers'), post: post),
+          EngagementScreen(key: const PageStorageKey('engagement'), post: post),
+        ],
+      ),
+    );
+  }
+}
+
+/// Back arrow, title and the "TikTok Studio" pill. Long-press the title to
+/// reach the admin screen.
+class _TopBar extends StatelessWidget {
+  const _TopBar();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 56,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Align(
+            alignment: Alignment.centerLeft,
+            child: IconButton(
+              tooltip: 'Back',
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              constraints: const BoxConstraints(minWidth: 56, minHeight: 56),
+              icon: const Icon(LucideIcons.arrowLeft, size: 24),
+              onPressed: () => Navigator.maybePop(context),
+            ),
+          ),
+          GestureDetector(
+            onLongPress: () => openAdmin(context),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 96),
+              child: Text(
+                'Video analytics',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: t(17, weight: FontWeight.w700),
+              ),
+            ),
+          ),
+          Align(
+            alignment: Alignment.centerRight,
+            child: Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: Container(
+                height: 28,
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(LucideIcons.userStar, size: 13),
+                    const SizedBox(width: 4),
+                    Text(
+                      'TikTok Studio',
+                      style: t(12, weight: FontWeight.w500),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Cover, posting date and the five headline counts.
+class _VideoHeader extends StatelessWidget {
+  const _VideoHeader({required this.post});
+
+  final Post post;
+
+  @override
+  Widget build(BuildContext context) {
+    final stats = <(Widget, int)>[
+      (const Icon(Icons.play_arrow_rounded), post.views),
+      (const Icon(Icons.favorite), post.likes),
+      (const Icon(Icons.sms), post.comments),
+      (Transform.flip(flipX: true, child: const Icon(Icons.reply)), post.shares),
+      (const Icon(Icons.bookmark), post.saves),
+    ];
+    return Padding(
+      padding: const EdgeInsets.only(top: 16, bottom: 18),
+      child: Column(
+        children: [
+          VideoCover(
+            url: post.thumbnailUrl,
+            width: 80,
+            height: 107,
+            child: Align(
+              alignment: Alignment.bottomCenter,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Text(
+                  '${plain(post.durationSec)}s',
+                  style:
+                      t(13, weight: FontWeight.w700, color: Colors.white)
+                          .copyWith(
+                            shadows: const [
+                              Shadow(blurRadius: 3, color: Colors.black54),
+                            ],
+                          ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'Posted on ${postedOn(post.postedAt)}',
+            style: t(13, color: const Color(0xFF6C6D72)),
+          ),
+          const SizedBox(height: 14),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 15),
+            child: IntrinsicHeight(
+              child: Row(
+                children: [
+                  for (var i = 0; i < stats.length; i++) ...[
+                    if (i > 0)
+                      const VerticalDivider(
+                        width: 1,
+                        thickness: 1,
+                        indent: 6,
+                        endIndent: 6,
+                        color: AppColors.border,
+                      ),
+                    Expanded(
+                      child: Column(
+                        children: [
+                          IconTheme(
+                            data: const IconThemeData(
+                              size: 20,
+                              color: Color(0xFF8A8B90),
+                            ),
+                            child: stats[i].$1,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            abbr(stats[i].$2),
+                            style: t(15, weight: FontWeight.w500),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TabsDelegate extends SliverPersistentHeaderDelegate {
+  _TabsDelegate(this.controller);
+
+  final TabController controller;
+
+  @override
+  double get minExtent => 46;
+
+  @override
+  double get maxExtent => 46;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    return Material(
+      color: AppColors.background,
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: TabBar(
+          controller: controller,
+          isScrollable: true,
+          tabAlignment: TabAlignment.start,
+          padding: const EdgeInsets.only(left: 15),
+          labelPadding: const EdgeInsets.symmetric(horizontal: 10),
+          labelColor: AppColors.text,
+          unselectedLabelColor: AppColors.muted,
+          labelStyle: t(14, weight: FontWeight.w600),
+          unselectedLabelStyle: t(14, weight: FontWeight.w500),
+          indicatorColor: AppColors.text,
+          indicatorWeight: 2,
+          indicatorSize: TabBarIndicatorSize.tab,
+          overlayColor: const WidgetStatePropertyAll(Colors.transparent),
+          dividerColor: AppColors.border,
+          dividerHeight: 1,
+          tabs: [
+            for (final tab in _AnalyticsShellState.tabs)
+              Tab(text: tab, height: 45),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  bool shouldRebuild(_TabsDelegate old) => old.controller != controller;
 }

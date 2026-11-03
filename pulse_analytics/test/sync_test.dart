@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:pulse_analytics/models/analytics_data.dart';
 import 'package:pulse_analytics/providers/analytics_provider.dart';
 import 'package:pulse_analytics/services/storage_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -15,9 +16,9 @@ class FakeServer {
   Future<http.Response> handle(http.Request r) async {
     final path = r.url.path;
     if (path == '/api/login') {
-      final pin = (jsonDecode(r.body) as Map)['pin'];
+      final pin = (jsonDecode(r.body) as Map)['password'];
       return pin == '4321'
-          ? http.Response(jsonEncode({'token': 't'}), 200)
+          ? http.Response(jsonEncode({'ok': true}), 200)
           : http.Response('{"error":"Incorrect PIN"}', 401);
     }
     if (r.method == 'GET') {
@@ -33,7 +34,7 @@ class FakeServer {
         headers: {'etag': tag},
       );
     }
-    if (r.headers['Authorization'] != 'Bearer t') {
+    if (r.headers['Authorization'] != 'Bearer 4321') {
       return http.Response('{"error":"Admin sign-in required"}', 401);
     }
     if (r.method == 'PUT') {
@@ -49,55 +50,86 @@ class FakeServer {
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
-  AnalyticsProvider providerFor(FakeServer s) => AnalyticsProvider(
+  AnalyticsProvider providerFor(FakeServer s, {String? post}) =>
+      AnalyticsProvider(
         ApiStorageService('http://x', client: MockClient(s.handle)),
         pollInterval: const Duration(milliseconds: 50),
-        fixedToday: DateTime(2026, 11, 2),
+        requestedPostId: post,
       );
 
-  test('admin edits reach a visitor on another device', () async {
+  test('a post the admin adds reaches a visitor on another device', () async {
     final server = FakeServer();
     final admin = providerFor(server);
     final visitor = providerFor(server);
     await admin.load();
     await visitor.load();
-    expect(visitor.data.male, 56);
+    expect(visitor.post!.id, 'sample');
 
     expect(await admin.login('0000'), isFalse);
     expect(await admin.login('4321'), isTrue);
-    admin.setGender(20, 5);
-    admin.setMetricTotal('Likes', 22500);
+    final added = Post.blank()
+      ..caption = 'My lion video'
+      ..views = 39
+      ..female = 5
+      ..other = 2;
+    admin.addPost(added);
     await Future<void>.delayed(const Duration(milliseconds: 800));
 
     expect(admin.syncError, isNull);
     expect(server.saved, isNotNull, reason: 'admin save reached server');
-    expect(visitor.data.male, 20);
-    expect(visitor.data.female, 5);
-    expect(visitor.data.other, 75);
-    expect(visitor.metricTotal('Likes'), 22500);
-    expect(admin.syncError, isNull);
+    // Newest post comes first, so the visitor now sees it.
+    expect(visitor.post!.caption, 'My lion video');
+    expect(visitor.post!.female, 5);
+    expect(visitor.post!.other, 2);
+    expect(visitor.post!.genderTotal, 7);
 
-    // A fresh visit (e.g. after a refresh) loads the saved figures too.
-    final reopened = providerFor(server);
-    await reopened.load();
-    expect(reopened.data.male, 20);
+    // A link naming a post shows that one.
+    final linked = providerFor(server, post: 'sample');
+    await linked.load();
+    expect(linked.post!.id, 'sample');
+
+    // Editing and deleting are shared too.
+    admin.updatePost(Post.fromJson(added.toJson())..likes = 6);
+    admin.deletePost('sample');
+    await Future<void>.delayed(const Duration(milliseconds: 800));
+    expect(visitor.post!.likes, 6);
+    expect(visitor.data.posts.length, 1);
     admin.dispose();
     visitor.dispose();
-    reopened.dispose();
+    linked.dispose();
+  });
+
+  test('old saved figures without posts load as an empty list', () {
+    final data = AnalyticsData.fromJson({
+      'followers': [1, 2],
+    });
+    expect(data.posts, isEmpty);
+    expect(data.byId(null), isNull);
+    expect(data.inspiration['trending'], isNotEmpty);
   });
 
   test('a server problem at login is not reported as a wrong PIN', () async {
     final p = AnalyticsProvider(
-      ApiStorageService('http://x',
-          client: MockClient((_) async => http.Response(
-              '{"error":"Storage not configured: connect an Upstash Redis database."}',
-              500))),
+      ApiStorageService(
+        'http://x',
+        client: MockClient(
+          (_) async => http.Response(
+            '{"error":"Storage not configured: connect an Upstash Redis database."}',
+            500,
+          ),
+        ),
+      ),
       pollInterval: null,
     );
     await expectLater(
       p.login('1234'),
-      throwsA(isA<StorageException>().having(
-          (e) => e.message, 'message', contains('Storage not configured'))),
+      throwsA(
+        isA<StorageException>().having(
+          (e) => e.message,
+          'message',
+          contains('Storage not configured'),
+        ),
+      ),
     );
   });
 
@@ -105,7 +137,7 @@ void main() {
     final server = FakeServer();
     final p = providerFor(server);
     await p.load();
-    p.setGender(30, 30);
+    p.addPost(Post.blank());
     await Future<void>.delayed(const Duration(milliseconds: 100));
     expect(p.syncError, contains('Sign in'));
     expect(server.saved, isNull);
@@ -117,12 +149,12 @@ void main() {
     final p = providerFor(server);
     await p.load();
     await p.login('4321');
-    p.setGender(10, 10);
+    p.addPost(Post.blank());
     await Future<void>.delayed(const Duration(milliseconds: 100));
     expect(server.saved, isNotNull);
     await p.resetToSample();
     expect(server.saved, isNull);
-    expect(p.data.male, 56);
+    expect(p.data.posts.single.id, 'sample');
     p.dispose();
   });
 }

@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/analytics_data.dart';
 import '../../providers/analytics_provider.dart';
-import '../../theme/app_theme.dart';
 import '../../services/storage_service.dart';
+import '../../theme/app_theme.dart';
 import '../../utils/formatters.dart';
-import '../../widgets/value_editor.dart';
+import '../../widgets/ui.dart';
+import 'inspiration_editor_screen.dart';
+import 'post_editor_screen.dart';
 
 /// Asks for the admin PIN, checks it with the server, then opens the admin
 /// screen.
@@ -31,7 +34,7 @@ Future<void> openAdmin(BuildContext context) async {
               if (ctx.mounted) Navigator.pop(ctx, true);
               return;
             }
-            error = 'Incorrect PIN';
+            error = 'Incorrect password';
           } on StorageException catch (e) {
             error = e.message;
           }
@@ -44,9 +47,8 @@ Future<void> openAdmin(BuildContext context) async {
             controller: controller,
             autofocus: true,
             obscureText: true,
-            keyboardType: TextInputType.number,
             decoration: InputDecoration(
-              labelText: 'PIN',
+              labelText: 'Password',
               errorText: error,
               border: const OutlineInputBorder(),
             ),
@@ -68,43 +70,24 @@ Future<void> openAdmin(BuildContext context) async {
   );
   // Not disposed: the dialog is still animating closed and reads it.
   if (ok == true && context.mounted) {
-    await Navigator.of(context)
-        .push(MaterialPageRoute<void>(builder: (_) => const AdminScreen()));
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (_) => const AdminScreen()));
   }
-}
-
-/// Edits one series' per-day values through a dialog; returns them in window
-/// order, or null if cancelled.
-Future<List<int>?> _editPoints(
-  BuildContext context, {
-  required String title,
-  required List<DateTime> dates,
-  required List<int> values,
-  bool money = false,
-}) async {
-  final result = await showValuesEditor(
-    context,
-    title: title,
-    helper: 'Edit the value for each day.',
-    integer: !money,
-    initial: {
-      for (var i = 0; i < dates.length; i++)
-        shortDate(dates[i]): money ? values[i] / 100 : values[i],
-    },
-  );
-  return result?.values
-      .map((v) => money ? (v * 100).round() : v.round())
-      .toList();
 }
 
 class AdminScreen extends StatelessWidget {
   const AdminScreen({super.key});
 
+  Future<void> _edit(BuildContext context, Post? post) =>
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(builder: (_) => PostEditorScreen(post: post)),
+      );
+
   @override
   Widget build(BuildContext context) {
     final p = context.watch<AnalyticsProvider>();
     final d = p.data;
-    final dates = p.windowDates;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -127,190 +110,86 @@ class AdminScreen extends StatelessWidget {
               ),
               child: Text(p.syncError!, style: t(13, color: AppColors.down)),
             ),
+          FilledButton.icon(
+            onPressed: () => _edit(context, null),
+            icon: const Icon(LucideIcons.plus, size: 18),
+            label: const Text('Add a post'),
+          ),
+          const SizedBox(height: 8),
           _Group(
-            title: 'Date range',
-            note: 'Totals and daily values below apply to this range.',
+            title: 'Posts',
+            note:
+                'Visitors see the first post. To show another one, add '
+                '?v=<post id> to the address; Copy link does that for you.',
             children: [
-              Padding(
-                padding: const EdgeInsets.all(12),
-                child: SegmentedButton<int>(
-                  showSelectedIcon: false,
-                  segments: [
-                    for (final r in AnalyticsProvider.ranges)
-                      ButtonSegment(value: r, label: Text('${r}d')),
-                  ],
-                  selected: {p.rangeDays},
-                  onSelectionChanged: (s) => p.setRange(s.first),
+              if (d.posts.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Text('No posts yet. Tap "Add a post".'),
                 ),
-              ),
-            ],
-          ),
-          _Group(
-            title: 'Metrics',
-            note: 'Totals rescale the daily values to match.',
-            children: [
-              for (final k in d.metrics.keys)
-                _MetricRow(metricKey: k, p: p, dates: dates),
-            ],
-          ),
-          _Group(
-            title: 'Followers',
-            children: [
-              _Row(
-                title: 'Total followers',
-                value: grouped(p.totalFollowers),
-                onTap: () async {
-                  final r = await showValuesEditor(
-                    context,
-                    title: 'Total followers',
-                    helper: 'The whole trend line shifts to match.',
-                    initial: {'Total': p.totalFollowers},
-                  );
-                  if (r != null) p.setTotalFollowers(r['Total']!.round());
-                },
-              ),
-              _Row(
-                title: 'Net followers (${p.rangeDays} days)',
-                value: grouped(p.netFollowers),
-                onTap: () async {
-                  final r = await showValuesEditor(
-                    context,
-                    title: 'Net followers (${p.rangeDays} days)',
-                    helper: 'Earlier days are adjusted to match.',
-                    initial: {'Net': p.netFollowers},
-                  );
-                  if (r != null) p.setNetFollowers(r['Net']!.round());
-                },
-              ),
-              _Row(
-                title: 'Daily follower counts',
-                value: '${p.rangeDays} days',
-                onTap: () async {
-                  final r = await _editPoints(
-                    context,
-                    title: 'Total followers by day',
-                    dates: dates,
-                    values: p.followerWindow,
-                  );
-                  if (r != null) p.setFollowerWindow(r);
-                },
-              ),
-              _Row(
-                title: 'Gender',
-                value: '${d.male.round()}% / ${d.female.round()}%',
-                onTap: () async {
-                  final r = await showValuesEditor(
-                    context,
-                    title: 'Gender',
-                    integer: false,
-                    suffix: '%',
-                    maxTotal: 100,
-                    helper: 'Other is whatever remains of 100%.',
-                    initial: {'Male': d.male, 'Female': d.female},
-                  );
-                  if (r != null) p.setGender(r['Male']!, r['Female']!);
-                },
-              ),
-              _Row(
-                title: 'Age groups',
-                value: '${d.ages.length} groups',
-                onTap: () async {
-                  final r = await showValuesEditor(
-                    context,
-                    title: 'Age groups',
-                    integer: false,
-                    suffix: '%',
-                    maxTotal: 100,
-                    initial: d.ages,
-                  );
-                  if (r != null) p.setAges(r);
-                },
-              ),
-              _Row(
-                title: 'Locations',
-                value: '${d.locations.length} countries',
-                onTap: () async {
-                  final text = await _editLines(
-                    context,
-                    title: 'Locations',
-                    helper: 'One per line: name, percent',
-                    initial: [
-                      for (final l in d.locations) '${l.name}, ${l.percent}',
-                    ],
-                  );
-                  if (text == null) return;
-                  final list = <LocationShare>[];
-                  for (final line in text) {
-                    final i = line.lastIndexOf(',');
-                    if (i < 1) continue;
-                    final pct = double.tryParse(line.substring(i + 1).trim());
-                    if (pct == null) continue;
-                    list.add(LocationShare(line.substring(0, i).trim(), pct));
-                  }
-                  p.setLocations(list);
-                },
-              ),
-              _Row(
-                title: 'Active followers by hour',
-                value: '24 values',
-                onTap: () async {
-                  final r = await showValuesEditor(
-                    context,
-                    title: 'Active followers by hour',
-                    initial: {
-                      for (var h = 0; h < 24; h++) hourLabel(h): d.hourly[h],
+              for (final post in d.posts)
+                ListTile(
+                  leading: VideoCover(
+                    url: post.thumbnailUrl,
+                    width: 36,
+                    height: 48,
+                    radius: 4,
+                  ),
+                  title: Text(
+                    post.caption.isEmpty ? '(no caption)' : post.caption,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: t(14),
+                  ),
+                  subtitle: Text(
+                    '${grouped(post.views)} views · ${postedOn(post.postedAt)}',
+                    style: t(12, color: AppColors.muted),
+                  ),
+                  trailing: IconButton(
+                    tooltip: 'Copy link',
+                    icon: const Icon(LucideIcons.link, size: 18),
+                    onPressed: () async {
+                      final link = Uri.base
+                          .replace(
+                            queryParameters: {'v': post.id},
+                            fragment: '',
+                          )
+                          .toString();
+                      await Clipboard.setData(ClipboardData(text: link));
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Link copied')),
+                        );
+                      }
                     },
-                  );
-                  if (r != null) {
-                    p.setHourly(r.values.map((v) => v.round()).toList());
-                  }
-                },
-              ),
-              _Row(
-                title: 'Active followers by day',
-                value: '7 values',
-                onTap: () async {
-                  final r = await showValuesEditor(
-                    context,
-                    title: 'Active followers by day',
-                    initial: {
-                      for (var i = 0; i < 7; i++) weekdayNames[i]: d.weekday[i],
-                    },
-                  );
-                  if (r != null) {
-                    p.setWeekday(r.values.map((v) => v.round()).toList());
-                  }
-                },
-              ),
+                  ),
+                  onTap: () => _edit(context, post),
+                ),
             ],
           ),
           _Group(
-            title: 'Comments',
+            title: 'Creation Inspiration',
+            note:
+                'Add, remove and change the posts in each list, with their '
+                'own pictures.',
             children: [
-              _Row(
-                title: 'Top words',
-                value: '${d.topWords.length} words',
-                onTap: () async {
-                  final text = await _editLines(
-                    context,
-                    title: 'Top words in comments',
-                    helper: 'One per line: word, count',
-                    initial: [
-                      for (final w in d.topWords) '${w.word}, ${w.count}',
-                    ],
-                  );
-                  if (text == null) return;
-                  final list = <WordCount>[];
-                  for (final line in text) {
-                    final i = line.lastIndexOf(',');
-                    if (i < 1) continue;
-                    final n = int.tryParse(line.substring(i + 1).trim());
-                    if (n == null || n < 0) continue;
-                    list.add(WordCount(line.substring(0, i).trim(), n));
-                  }
-                  p.setTopWords(list);
-                },
-              ),
+              for (final (key, title) in const [
+                ('trending', 'Trending posts'),
+                ('similar', 'Similar posts'),
+                ('followers', 'Followers viewed'),
+              ])
+                _Row(
+                  title: title,
+                  value: '${d.inspiration[key]?.length ?? 0} posts',
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => InspirationEditorScreen(
+                        listKey: key,
+                        title: title,
+                      ),
+                    ),
+                  ),
+                ),
             ],
           ),
           const SizedBox(height: 4),
@@ -320,7 +199,9 @@ class AdminScreen extends StatelessWidget {
                 context: context,
                 builder: (ctx) => AlertDialog(
                   title: const Text('Reset all figures?'),
-                  content: const Text('Everything returns to the sample data.'),
+                  content: const Text(
+                    'Every post is removed and the sample data returns.',
+                  ),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(ctx, false),
@@ -338,8 +219,9 @@ class AdminScreen extends StatelessWidget {
                 await p.resetToSample();
               } on StorageException catch (e) {
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context)
-                      .showSnackBar(SnackBar(content: Text(e.message)));
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text(e.message)));
                 }
               }
             },
@@ -351,51 +233,6 @@ class AdminScreen extends StatelessWidget {
       ),
     );
   }
-}
-
-/// Multi-line text dialog; returns the non-empty lines or null if cancelled.
-Future<List<String>?> _editLines(
-  BuildContext context, {
-  required String title,
-  required String helper,
-  required List<String> initial,
-}) {
-  final controller = TextEditingController(text: initial.join('\n'));
-  return showDialog<List<String>>(
-    context: context,
-    builder: (ctx) => AlertDialog(
-      title: Text(title, style: t(15, weight: FontWeight.w600)),
-      content: SizedBox(
-        width: double.maxFinite,
-        child: TextField(
-          controller: controller,
-          maxLines: 10,
-          minLines: 6,
-          decoration: InputDecoration(
-            helperText: helper,
-            border: const OutlineInputBorder(),
-          ),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(ctx),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(
-          onPressed: () => Navigator.pop(
-            ctx,
-            controller.text
-                .split('\n')
-                .map((l) => l.trim())
-                .where((l) => l.isNotEmpty)
-                .toList(),
-          ),
-          child: const Text('Save'),
-        ),
-      ],
-    ),
-  ).whenComplete(controller.dispose);
 }
 
 class _Group extends StatelessWidget {
@@ -465,60 +302,6 @@ class _Row extends StatelessWidget {
         color: AppColors.muted,
       ),
       onTap: onTap,
-    );
-  }
-}
-
-class _MetricRow extends StatelessWidget {
-  const _MetricRow({
-    required this.metricKey,
-    required this.p,
-    required this.dates,
-  });
-
-  final String metricKey;
-  final AnalyticsProvider p;
-  final List<DateTime> dates;
-
-  @override
-  Widget build(BuildContext context) {
-    final isMoney = metricKey == 'Est. rewards';
-    final total = p.metricTotal(metricKey);
-    return ListTile(
-      dense: true,
-      title: Text(metricKey, style: t(14)),
-      subtitle: Text(
-        '${formatMetric(metricKey, total)} · ${p.rangeDays} days',
-        style: t(12, color: AppColors.muted),
-      ),
-      trailing: TextButton(
-        onPressed: () async {
-          final r = await _editPoints(
-            context,
-            title: '$metricKey by day',
-            dates: dates,
-            values: p.metricWindow(metricKey),
-            money: isMoney,
-          );
-          if (r != null) p.setMetricWindow(metricKey, r);
-        },
-        child: const Text('Daily'),
-      ),
-      onTap: () async {
-        final r = await showValuesEditor(
-          context,
-          title: '$metricKey (${p.rangeDays} days)',
-          helper: 'Daily values are rescaled to match the total.',
-          integer: !isMoney,
-          suffix: isMoney ? 'USD' : null,
-          initial: {'Total': isMoney ? total / 100 : total},
-        );
-        if (r == null) return;
-        p.setMetricTotal(
-          metricKey,
-          isMoney ? (r['Total']! * 100).round() : r['Total']!.round(),
-        );
-      },
     );
   }
 }

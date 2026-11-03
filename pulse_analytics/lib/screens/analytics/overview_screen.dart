@@ -1,128 +1,209 @@
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:provider/provider.dart';
 
 import '../../models/analytics_data.dart';
-import '../../providers/analytics_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/formatters.dart';
-import '../../widgets/key_metrics.dart';
+import '../../widgets/tab_page.dart';
 import '../../widgets/ui.dart';
+import '../../widgets/video_timeline.dart';
 
 class OverviewScreen extends StatelessWidget {
-  const OverviewScreen({super.key});
+  const OverviewScreen({super.key, required this.post});
 
-  static const keys = [
-    'Post views',
-    'Profile views',
-    'Likes',
-    'Comments',
-    'Shares',
-    'Est. rewards',
-  ];
+  final Post post;
 
   @override
   Widget build(BuildContext context) {
-    final p = context.watch<AnalyticsProvider>();
-    final d = p.data;
-
-    MetricTileData tile(String k) {
-      final series = p.metricWindow(k);
-      if (d.dashMetrics.contains(k)) {
-        return MetricTileData(title: k, value: '-', delta: '-', series: series);
-      }
-      final total = p.metricTotal(k);
-      final delta = overviewDelta(k, total, p.previousMetricTotal(k));
-      return MetricTileData(
-        title: k,
-        value: formatMetric(k, total),
-        delta: delta.text,
-        up: delta.up,
-        series: series,
-      );
-    }
-
-    final hasViews = p.metricTotal('Post views') > 0;
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(8, 0, 8, 16),
+    return TabPage(
       children: [
-        KeyMetricsCard(
-          key: ValueKey('overview-${p.rangeDays}-${p.endOffset}'),
-          dates: p.windowDates,
-          tiles: [for (final k in keys) tile(k)],
+        _KeyMetricsCard(post: post),
+        _RetentionCard(post: post),
+        _TallyCard(
+          title: 'Traffic sources',
+          tally: post.traffic,
+          total: post.trafficTotal,
         ),
-        _TrafficCard(shares: hasViews ? d.traffic : const []),
-        _SearchCard(queries: hasViews ? d.queries : const []),
-        if (!p.overviewNoteDismissed)
-          NoteCard(
-            title: 'Update to "For your inspiration"',
-            body:
-                'As part of our recent updates to improve the user '
-                'experience, this section is now located in "TikTok Studio" '
-                '> "Creation Inspiration".',
-            onClose: p.dismissOverviewNote,
-          ),
-        const _PromoteCard(),
+        _QueriesCard(queries: post.queries),
       ],
     );
   }
 }
 
-class _TrafficCard extends StatelessWidget {
-  const _TrafficCard({required this.shares});
+class _KeyMetricsCard extends StatefulWidget {
+  const _KeyMetricsCard({required this.post});
 
-  final List<LocationShare> shares;
+  final Post post;
+
+  @override
+  State<_KeyMetricsCard> createState() => _KeyMetricsCardState();
+}
+
+class _KeyMetricsCardState extends State<_KeyMetricsCard> {
+  int _selected = 0;
 
   @override
   Widget build(BuildContext context) {
-    final empty = shares.isEmpty;
+    final p = widget.post;
+    final tiles = [
+      ('Video views', grouped(p.views)),
+      ('Total play time', playTime(p.playTimeSec)),
+      ('Average watch time', '${plain(p.avgWatchSec)}s'),
+      ('Watched full video', '${plain(p.fullWatchPct)}%'),
+      ('New followers', grouped(p.newFollowers)),
+    ];
     return TkCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const CardTitle('Traffic source'),
-          if (empty) ...[
-            const SizedBox(height: 6),
-            const BodyText(
-              "You'll be able to see this information once there's enough "
-              'data for analysis.',
-            ),
-          ],
-          const SizedBox(height: 14),
-          for (var i = 0; i < (empty ? 6 : shares.length); i++)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 14),
-              child: Column(
+          const CardTitle('Key metrics'),
+          const SizedBox(height: 4),
+          BodyText('Updated on ${numericDate(p.updatedAt)}.'),
+          const SizedBox(height: 12),
+          LayoutBuilder(
+            builder: (context, box) {
+              final w = (box.maxWidth - 8) / 2;
+              return Wrap(
+                spacing: 8,
+                runSpacing: 8,
                 children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          empty ? '-' : shares[i].name,
-                          overflow: TextOverflow.ellipsis,
-                          style: t(16.5, height: 1.2),
+                  for (var i = 0; i < tiles.length; i++)
+                    GestureDetector(
+                      onTap: () => setState(() => _selected = i),
+                      child: Container(
+                        width: w,
+                        height: 76,
+                        padding: const EdgeInsets.fromLTRB(12, 12, 8, 8),
+                        decoration: BoxDecoration(
+                          color: i == _selected
+                              ? AppColors.selectedTile
+                              : Colors.white,
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                            color: i == _selected
+                                ? AppColors.accent
+                                : AppColors.divider,
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              tiles[i].$1,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: t(13.5, height: 1.2),
+                            ),
+                            const Spacer(),
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                tiles[i].$2,
+                                style: t(
+                                  23,
+                                  weight: FontWeight.w700,
+                                  height: 1.1,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      Text(
-                        empty
-                            ? '-%'
-                            : '${shares[i].percent.toStringAsFixed(1)}%',
-                        style: t(16.5, weight: FontWeight.w500, height: 1.2),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: LinearProgressIndicator(
-                      value: empty ? 0 : (shares[i].percent / 100).clamp(0, 1),
-                      minHeight: 8,
-                      backgroundColor: AppColors.track,
-                      color: AppColors.accent,
                     ),
-                  ),
                 ],
-              ),
+              );
+            },
+          ),
+          const SizedBox(height: 12),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF3F3F4),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: const BodyText(
+              'Data chart is only shown for 365 days from the date your '
+              'video is posted.',
+              color: Color(0xFF6C6D72),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RetentionCard extends StatelessWidget {
+  const _RetentionCard({required this.post});
+
+  final Post post;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasData = post.avgWatchedPct > 0;
+    return TkCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const CardTitle('Retention rate'),
+          const SizedBox(height: 10),
+          if (hasData) ...[
+            Text(
+              'On average, viewers watched ${plain(post.avgWatchedPct)}% of '
+              'your video.',
+              style: t(15, weight: FontWeight.w500, height: 1.3),
+            ),
+            const SizedBox(height: 4),
+            BodyText(
+              'Most viewers stopped watching at ${clock(post.stopSec)}. Check '
+              'out the moment in your video where most viewers lost interest.',
+            ),
+          ] else
+            const BodyText(kNeedViewsNotice),
+          const SizedBox(height: 14),
+          PlayableCover(post: post),
+          const SizedBox(height: 14),
+          TimelineChart(
+            durationSec: post.durationSec,
+            showPercent: true,
+            curve: (x) => retentionAt(x, post.avgWatchedPct),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Share per label as progress bars; grey "-" rows until there is data.
+class _TallyCard extends StatelessWidget {
+  const _TallyCard({
+    required this.title,
+    required this.tally,
+    required this.total,
+  });
+
+  final String title;
+  final List<Tally> tally;
+  final int total;
+
+  @override
+  Widget build(BuildContext context) {
+    final empty = total <= 0;
+    final rows = empty ? 6 : tally.length;
+    return TkCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CardTitle(title),
+          if (empty) ...[
+            const SizedBox(height: 6),
+            const BodyText(kNeedViewsNotice),
+          ],
+          const SizedBox(height: 12),
+          for (var i = 0; i < rows; i++)
+            ShareRow(
+              label: empty ? '-' : tally[i].name,
+              percent: empty ? null : percentOf(tally[i].count, total),
             ),
         ],
       ),
@@ -130,10 +211,54 @@ class _TrafficCard extends StatelessWidget {
   }
 }
 
-class _SearchCard extends StatelessWidget {
-  const _SearchCard({required this.queries});
+/// "Name ........ 42%" with a progress bar underneath.
+class ShareRow extends StatelessWidget {
+  const ShareRow({super.key, required this.label, required this.percent});
 
-  final List<WordCount> queries;
+  final String label;
+  final int? percent;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  label,
+                  overflow: TextOverflow.ellipsis,
+                  style: t(14, height: 1.2),
+                ),
+              ),
+              Text(
+                percent == null ? '-%' : '$percent%',
+                style: t(14, weight: FontWeight.w500, height: 1.2),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: (percent ?? 0) / 100,
+              minHeight: 7,
+              backgroundColor: AppColors.track,
+              color: AppColors.accent,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _QueriesCard extends StatelessWidget {
+  const _QueriesCard({required this.queries});
+
+  final List<Tally> queries;
 
   @override
   Widget build(BuildContext context) {
@@ -144,10 +269,7 @@ class _SearchCard extends StatelessWidget {
           const CardTitle('Search queries'),
           const SizedBox(height: 6),
           if (queries.isEmpty)
-            const BodyText(
-              'Each search query has low traffic at the moment. Information '
-              'will be available once at least 1 query has enough traffic.',
-            )
+            const BodyText(kNeedViewsNotice)
           else
             for (final q in queries)
               Padding(
@@ -156,46 +278,18 @@ class _SearchCard extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        q.word,
+                        q.name,
                         overflow: TextOverflow.ellipsis,
-                        style: t(16.5),
+                        style: t(14),
                       ),
                     ),
                     Text(
                       grouped(q.count),
-                      style: t(16.5, weight: FontWeight.w500),
+                      style: t(14, weight: FontWeight.w500),
                     ),
                   ],
                 ),
               ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PromoteCard extends StatelessWidget {
-  const _PromoteCard();
-
-  @override
-  Widget build(BuildContext context) {
-    return TkCard(
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Want more traffic?',
-                  style: t(18, weight: FontWeight.w600, height: 1.2),
-                ),
-                const SizedBox(height: 5),
-                const BodyText('Use Promote to grow your audience.'),
-              ],
-            ),
-          ),
-          const Icon(LucideIcons.chevronRight, size: 22, color: AppColors.text),
         ],
       ),
     );

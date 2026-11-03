@@ -1,14 +1,16 @@
-import 'dart:ui' show Size;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:provider/provider.dart';
 import 'package:pulse_analytics/app.dart';
+import 'package:pulse_analytics/models/analytics_data.dart';
 import 'package:pulse_analytics/providers/analytics_provider.dart';
+import 'package:pulse_analytics/screens/admin/inspiration_editor_screen.dart';
+import 'package:pulse_analytics/screens/admin/post_editor_screen.dart';
 import 'package:pulse_analytics/services/storage_service.dart';
 import 'package:pulse_analytics/theme/app_theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+const _notice = 'Data will be shown when this video reaches 100 views.';
 
 void main() {
   setUp(() {
@@ -16,26 +18,23 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  Future<AnalyticsProvider> pump(WidgetTester tester, Size size) async {
+  Future<AnalyticsProvider> pump(
+    WidgetTester tester,
+    Size size, {
+    void Function(AnalyticsData)? seed,
+  }) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
-    final p = AnalyticsProvider(LocalStorageService(),
-        pollInterval: null,
-        fixedToday: DateTime(2026, 11, 2))
-      ..load();
-    await tester.pumpWidget(ChangeNotifierProvider.value(
-      value: p,
-      child: const PulseApp(),
-    ));
+    final p = AnalyticsProvider(LocalStorageService(), pollInterval: null);
+    await p.load();
+    if (seed != null) seed(p.data);
+    await tester.pumpWidget(
+      ChangeNotifierProvider.value(value: p, child: const PulseApp()),
+    );
     await tester.pumpAndSettle();
     return p;
   }
-
-  /// The scrollable page that contains [anchor].
-  Finder pageOf(String anchor) => find
-      .ancestor(of: find.text(anchor), matching: find.byType(Scrollable))
-      .first;
 
   Future<void> openTab(WidgetTester tester, String name) async {
     await tester.ensureVisible(find.text(name).first);
@@ -45,154 +44,197 @@ void main() {
   }
 
   for (final w in [360.0, 390.0, 430.0]) {
-    testWidgets('overview renders at ${w.toInt()}px', (tester) async {
+    testWidgets('header and overview render at ${w.toInt()}px', (tester) async {
       await pump(tester, Size(w, 900));
-      expect(find.text('Analytics'), findsOneWidget);
+      expect(find.text('Video analytics'), findsOneWidget);
+      expect(find.text('TikTok Studio'), findsOneWidget);
+      expect(find.text('55.87s'), findsOneWidget);
+      expect(find.text('Posted on Jul 3, 2024, 11:52 AM'), findsOneWidget);
+      for (final tab in ['Inspiration', 'Overview', 'Viewers', 'Engagement']) {
+        expect(find.text(tab), findsOneWidget);
+      }
       expect(find.text('Key metrics'), findsOneWidget);
-      expect(find.text('Oct 25 - Oct 31'), findsOneWidget);
-      expect(find.text('Post views'), findsOneWidget);
-      expect(find.text(r'$0.00'), findsOneWidget);
-      expect(find.text('-1 (-100%)'), findsOneWidget);
-      expect(find.text(r'+$0.00'), findsOneWidget);
+      expect(find.text('Video views'), findsOneWidget);
+      expect(find.text('0h:06m:23s'), findsOneWidget);
+      expect(find.text('8.5s'), findsOneWidget);
+      expect(find.text('8.89%'), findsOneWidget);
+      expect(tester.takeException(), isNull);
     });
   }
 
-  testWidgets('overview lower cards and dismissable note', (tester) async {
-    await pump(tester, const Size(390, 900));
-    final list = pageOf('Key metrics');
-    await tester.scrollUntilVisible(find.text('Want more traffic?'), 300,
-        scrollable: list);
-    expect(find.text('Traffic source'), findsOneWidget);
-    expect(find.text('Search queries'), findsOneWidget);
-    expect(find.text('Update to "For your inspiration"'), findsOneWidget);
-    await tester.tap(find.byIcon(LucideIcons.x));
+  testWidgets('tab bar sticks under the top bar when the page scrolls', (
+    tester,
+  ) async {
+    await pump(tester, const Size(390, 700));
+    final tabs = find.text('Overview');
+    final before = tester.getTopLeft(tabs).dy;
+    expect(before, greaterThan(200), reason: 'tabs start below the header');
+
+    await tester.drag(find.text('Key metrics'), const Offset(0, -600));
     await tester.pumpAndSettle();
-    expect(find.text('Update to "For your inspiration"'), findsNothing);
+
+    // The cover and counts have scrolled away; the tabs stayed put.
+    expect(find.text('Posted on Jul 3, 2024, 11:52 AM'), findsNothing);
+    final after = tester.getTopLeft(tabs).dy;
+    expect(after, lessThan(90));
+    expect(after, greaterThanOrEqualTo(56));
+    expect(find.text('Overview').hitTestable(), findsOneWidget);
   });
 
-  testWidgets('inspiration lists trending topics', (tester) async {
+  testWidgets('inspiration lists the trending posts', (tester) async {
     await pump(tester, const Size(390, 900));
     await openTab(tester, 'Inspiration');
     expect(find.text('Creation Inspiration'), findsOneWidget);
-    expect(find.text('Trending topics'), findsOneWidget);
-    expect(find.text("who won the super ballon d'or in 2026"), findsOneWidget);
-    expect(find.text('343.0M'), findsOneWidget);
-    // The period chips only belong to the data tabs.
-    expect(find.text('7 days'), findsNothing);
+    expect(find.text('Trending posts'), findsOneWidget);
+    expect(
+      find.text('Post videos like these for possible virality.'),
+      findsOneWidget,
+    );
+    expect(find.text('Morning routine in 30 seconds #fyp'), findsOneWidget);
+    await tester.pumpAndSettle();
   });
 
-  testWidgets('content shows the empty state', (tester) async {
-    await pump(tester, const Size(390, 900));
-    await openTab(tester, 'Content');
-    expect(find.text('Update to “Posts”'), findsOneWidget);
-    expect(find.text('Your top posts'), findsOneWidget);
-    expect(find.text('Most views'), findsOneWidget);
-    expect(find.text('No top posts'), findsOneWidget);
-  });
-
-  testWidgets('viewers show placeholders without data', (tester) async {
-    await pump(tester, const Size(390, 900));
+  testWidgets('viewers shows notices until the admin adds figures', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      const Size(390, 1200),
+      seed: (d) => d.posts.first.totalViewers = 0,
+    );
     await openTab(tester, 'Viewers');
     expect(find.text('Total viewers'), findsOneWidget);
-    expect(find.text('0 (0%)'), findsNWidgets(2));
-    expect(find.text('Viewer insights'), findsOneWidget);
-    await tester.scrollUntilVisible(
-        find.text('Posts your viewers also viewed'), 300,
-        scrollable: pageOf('Viewer insights'));
-    expect(find.text('Most active times'), findsOneWidget);
-    expect(find.text('Oct 27'), findsOneWidget);
+    expect(find.text('Viewer types'), findsOneWidget);
+    expect(find.text('Gender'), findsOneWidget);
+    expect(find.text(_notice), findsWidgets);
+  });
+
+  testWidgets('viewers shows admin-entered counts as percentages', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      const Size(390, 1600),
+      seed: (d) => d.posts.first
+        ..totalViewers = 28
+        ..viewersChange = 1
+        ..newViewers = 12
+        ..female = 5
+        ..other = 2
+        ..ages = [3, 2, 1, 1, 0],
+    );
+    await openTab(tester, 'Viewers');
+    expect(find.text('28'), findsOneWidget);
+    expect(find.text('+1'), findsOneWidget);
+    expect(find.text('(vs 1d ago)'), findsOneWidget);
+    expect(find.text('43%'), findsWidgets); // new viewers 12 of 28
+    expect(find.text('57%'), findsWidgets);
+    expect(find.text('71%'), findsOneWidget); // 5 of 7 are female
+    expect(find.text('29%'), findsNWidgets(2)); // other 2 of 7, age 2 of 7
+    expect(find.text('Female'), findsOneWidget);
+  });
+
+  testWidgets('engagement shows the likes moment and top words', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      const Size(390, 1200),
+      seed: (d) => d.posts.first.topWords = [Tally('wow', 4)],
+    );
+    await openTab(tester, 'Engagement');
+    expect(find.text('Top words used in comments'), findsOneWidget);
+    expect(find.text('wow · 4'), findsOneWidget);
+    expect(find.text('Likes'), findsOneWidget);
     expect(
-      find.text('Information will be displayed when there is enough data.'),
+      find.textContaining('Most viewers liked this video at 0:02.'),
       findsOneWidget,
     );
   });
 
-  testWidgets('followers show totals, gender and active times',
-      (tester) async {
-    await pump(tester, const Size(390, 900));
-    await openTab(tester, 'Followers');
-    expect(find.text('Total followers'), findsOneWidget);
-    expect(find.text('120'), findsOneWidget);
-    expect(find.text('All time'), findsOneWidget);
-    expect(find.text('Follower insights'), findsOneWidget);
-    expect(find.text('56%'), findsOneWidget);
-    expect(find.text('44%'), findsOneWidget);
-    await tester.scrollUntilVisible(find.text('Most active times'), 300,
-        scrollable: pageOf('Follower insights'));
-    expect(
-      find.text('Over the past 7 days, most of your followers were active on '
-          'Nov 1 at 12am.'),
-      findsOneWidget,
+  testWidgets('admin can add a post with numbers', (tester) async {
+    tester.view.physicalSize = const Size(600, 2400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final p = AnalyticsProvider(LocalStorageService(), pollInterval: null);
+    await p.load();
+    await tester.pumpWidget(
+      ChangeNotifierProvider.value(
+        value: p,
+        child: const MaterialApp(home: PostEditorScreen()),
+      ),
     );
-    expect(find.text('10 followers'), findsOneWidget);
-  });
-
-  testWidgets('live tab explains the move', (tester) async {
-    await pump(tester, const Size(390, 1400));
-    await openTab(tester, 'LIVE');
-    expect(find.text('Explore new LIVE Analytics'), findsOneWidget);
-    expect(find.text('New location'), findsOneWidget);
-    expect(find.text('Go to LIVE Center'), findsOneWidget);
-  });
-
-  testWidgets('range chips change the window', (tester) async {
-    final p = await pump(tester, const Size(390, 900));
-    await tester.tap(find.text('28 days'));
-    await tester.pumpAndSettle();
-    expect(p.rangeDays, 28);
-    await tester.tap(find.text('60 days'));
-    await tester.pumpAndSettle();
-    expect(p.rangeDays, 60);
-    p.setRange(365);
-    await tester.pumpAndSettle();
-    expect(p.followerWindow.length, 365);
-    expect(p.previousMetricTotal('Likes'), isNotNull);
-  });
-
-  testWidgets('custom range ends on the chosen day', (tester) async {
-    final p = await pump(tester, const Size(390, 900));
-    p.setCustomRange(DateTime(2026, 10, 1), DateTime(2026, 10, 10));
-    await tester.pumpAndSettle();
-    expect(p.customRange, isTrue);
-    expect(p.rangeDays, 10);
-    expect(p.windowDates.first, DateTime(2026, 10, 1));
-    expect(p.windowDates.last, DateTime(2026, 10, 10));
-    expect(p.followerWindow.length, 10);
-  });
-
-  testWidgets('admin needs the PIN and then edits figures', (tester) async {
-    final p = await pump(tester, const Size(390, 900));
-    await tester.longPress(find.text('Analytics'));
     await tester.pumpAndSettle();
 
-    await tester.enterText(find.byType(TextField), '0000');
-    await tester.tap(find.text('Enter'));
-    await tester.pumpAndSettle();
-    expect(find.text('Incorrect PIN'), findsOneWidget);
+    Future<void> fill(String label, String text) async {
+      final f = find.widgetWithText(TextField, label);
+      await tester.ensureVisible(f);
+      await tester.enterText(f, text);
+    }
 
-    await tester.enterText(find.byType(TextField), '1234');
-    await tester.tap(find.text('Enter'));
-    await tester.pumpAndSettle();
-    expect(find.text('Metrics'), findsOneWidget);
-
-    await tester.tap(find.text('Likes'));
-    await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField), '22500');
+    await fill('Caption', 'Lions');
+    await fill('Views', '39');
+    await fill('Female', '5');
+    await fill('Other', '2');
+    await fill('Locations', 'Nigeria, 4\nGhana, 3');
     await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
-    expect(p.metricTotal('Likes'), 22500);
+
+    final saved = p.data.posts.first;
+    expect(saved.caption, 'Lions');
+    expect(saved.views, 39);
+    expect(saved.female, 5);
+    expect(saved.other, 2);
+    expect(saved.male, 0);
+    expect(saved.locations.map((e) => e.name), ['Nigeria', 'Ghana']);
+    expect(p.data.posts.length, 2);
   });
 
-  testWidgets('editing figures updates them', (tester) async {
-    final p = await pump(tester, const Size(390, 900));
-    p.setMetricTotal('Likes', 22500);
-    expect(p.metricTotal('Likes'), 22500);
-    p.setTotalFollowers(12345);
-    expect(p.totalFollowers, 12345);
-    expect(p.followerWindow.last, 12345);
-    final total = p.totalFollowers;
-    p.setNetFollowers(50);
-    expect(p.netFollowers, 50);
-    expect(p.totalFollowers, total);
+  testWidgets('admin can add an inspiration post and see uploaded pictures', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(600, 2400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final p = AnalyticsProvider(LocalStorageService(), pollInterval: null);
+    await p.load();
+    final before = p.data.inspiration['trending']!.length;
+    await tester.pumpWidget(
+      ChangeNotifierProvider.value(
+        value: p,
+        child: const MaterialApp(
+          home: InspirationEditorScreen(
+            listKey: 'trending',
+            title: 'Trending posts',
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Cover picture'), findsNWidgets(before));
+    expect(find.text('Upload'), findsWidgets);
+
+    await tester.tap(find.text('Add a post'));
+    await tester.pumpAndSettle();
+    final captions = find.widgetWithText(TextFormField, 'Caption');
+    await tester.ensureVisible(captions.last);
+    await tester.enterText(captions.last, 'Brand new post');
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    final list = p.data.inspiration['trending']!;
+    expect(list.length, before + 1);
+    expect(list.last.caption, 'Brand new post');
+  });
+
+  testWidgets('an uploaded picture shows on the video header', (tester) async {
+    // A 1x1 transparent PNG, as an upload would be saved.
+    const png =
+        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+    await pump(tester, const Size(390, 900), seed: (d) {
+      d.posts.first.thumbnailUrl = png;
+    });
+    expect(find.byType(Image), findsWidgets);
+    expect(tester.takeException(), isNull);
   });
 }

@@ -44,11 +44,12 @@ class _AnalyticsShellState extends State<AnalyticsShell>
     final post = p.loading ? null : p.post;
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: SafeArea(
-        bottom: false,
-        child: Column(
+      body: Column(
           children: [
-            const _TopBar(),
+            const ColoredBox(
+              color: AppColors.topBar,
+              child: SafeArea(bottom: false, child: _TopBar()),
+            ),
             Expanded(
               child: p.loading
                   ? const Center(child: CircularProgressIndicator())
@@ -60,7 +61,6 @@ class _AnalyticsShellState extends State<AnalyticsShell>
             ),
           ],
         ),
-      ),
     );
   }
 }
@@ -121,36 +121,28 @@ class _TopBar extends StatelessWidget {
           ),
           GestureDetector(
             onLongPress: () => openAdmin(context),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 96),
-              child: Text(
-                'Video analytics',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: t(17, weight: FontWeight.w700),
-              ),
+            child: Text(
+              'Video analytics',
+              maxLines: 1,
+              style: t(15, weight: FontWeight.w700),
             ),
           ),
           Align(
             alignment: Alignment.centerRight,
             child: Padding(
-              padding: const EdgeInsets.only(right: 12),
+              padding: const EdgeInsets.only(right: 10),
               child: Container(
-                height: 28,
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: AppColors.border),
-                ),
+                height: 24,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                color: AppColors.topBar,
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(LucideIcons.userStar, size: 13),
-                    const SizedBox(width: 4),
+                    const Icon(LucideIcons.userStar, size: 11),
+                    const SizedBox(width: 3),
                     Text(
                       'TikTok Studio',
-                      style: t(12, weight: FontWeight.w500),
+                      style: t(10.5, weight: FontWeight.w500),
                     ),
                   ],
                 ),

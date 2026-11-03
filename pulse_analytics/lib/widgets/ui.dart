@@ -25,7 +25,7 @@ class TkCard extends StatelessWidget {
       padding: padding,
       decoration: BoxDecoration(
         color: AppColors.card,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(3),
       ),
       child: child,
     );

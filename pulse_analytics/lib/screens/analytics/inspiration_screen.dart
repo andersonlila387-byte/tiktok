@@ -43,7 +43,7 @@ class _InspirationScreenState extends State<InspirationScreen>
           clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
             color: AppColors.card,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(3),
           ),
           child: Stack(
             children: [
@@ -297,7 +297,7 @@ class _MoreButton extends StatelessWidget {
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: const Color(0xFFF1F1F2),
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(3),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

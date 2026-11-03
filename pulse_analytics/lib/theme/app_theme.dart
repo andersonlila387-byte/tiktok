@@ -4,6 +4,10 @@ import 'package:google_fonts/google_fonts.dart';
 class AppColors {
   static const background = Color(0xFFF4F4F4);
   static const card = Colors.white;
+
+  /// Top bar and its "TikTok Studio" label: plain white (page body is
+  /// [background], #F4F4F4).
+  static const topBar = Colors.white;
   static const border = Color(0xFFE3E3E3);
   static const divider = Color(0xFFEDEDED);
   static const text = Color(0xFF161823);

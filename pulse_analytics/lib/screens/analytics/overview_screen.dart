@@ -77,7 +77,7 @@ class _KeyMetricsCardState extends State<_KeyMetricsCard> {
                           color: i == _selected
                               ? AppColors.selectedTile
                               : Colors.white,
-                          borderRadius: BorderRadius.circular(6),
+                          borderRadius: BorderRadius.circular(3),
                           border: Border.all(
                             color: i == _selected
                                 ? AppColors.accent
@@ -119,7 +119,7 @@ class _KeyMetricsCardState extends State<_KeyMetricsCard> {
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: const Color(0xFFF3F3F4),
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: BorderRadius.circular(3),
             ),
             child: const BodyText(
               'Data chart is only shown for 365 days from the date your '

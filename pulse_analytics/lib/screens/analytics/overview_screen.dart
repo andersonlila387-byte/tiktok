@@ -93,16 +93,16 @@ class _KeyMetricsCardState extends State<_KeyMetricsCard> {
                       onTap: () => setState(() => _selected = i),
                       child: Container(
                         width: w,
-                        height: 76,
+                        height: 92,
                         padding: const EdgeInsets.fromLTRB(12, 12, 8, 8),
                         decoration: BoxDecoration(
                           color: i == _selected
-                              ? AppColors.selectedTile
+                              ? const Color(0xFFF4F9FF)
                               : Colors.white,
-                          borderRadius: BorderRadius.circular(6),
+                          borderRadius: BorderRadius.circular(10),
                           border: Border.all(
                             color: i == _selected
-                                ? AppColors.accent
+                                ? const Color(0xFF8FC2F2)
                                 : AppColors.divider,
                           ),
                         ),

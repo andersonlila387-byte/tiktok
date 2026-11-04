@@ -92,7 +92,7 @@ void main() {
       find.text('Post videos like these for possible virality.'),
       findsOneWidget,
     );
-    expect(find.text('Easy breakfast ideas in 30 seconds #fyp'), findsOneWidget);
+    expect(find.text('Fresh ingredients for dinner tonight #fyp'), findsOneWidget);
     await tester.pumpAndSettle();
   });
 

@@ -319,7 +319,7 @@ class AnalyticsData {
       ],
       inspiration: {
         'trending': [
-          InspirationPost('Easy breakfast ideas in 30 seconds #fyp', '6M', 'kitchen.diary', image: 'asset:assets/inspiration/c1.jpg', avatar: 'asset:assets/inspiration/a1.jpg'),
+          InspirationPost('Fresh ingredients for dinner tonight #fyp', '6M', 'kitchen.diary', image: 'asset:assets/inspiration/c1.jpg', avatar: 'asset:assets/inspiration/a1.jpg'),
           InspirationPost('Fresh strawberry dessert for tonight', '566.7K', 'sweet.bites', image: 'asset:assets/inspiration/c2.jpg', avatar: 'asset:assets/inspiration/a2.jpg'),
           InspirationPost('My pug wrapped up like a burrito', '5.4M', 'pug.life', image: 'asset:assets/inspiration/c3.jpg', avatar: 'asset:assets/inspiration/a3.jpg'),
           InspirationPost('New puppy first day at home', '2.5M', 'happy.paws', image: 'asset:assets/inspiration/c4.jpg', avatar: 'asset:assets/inspiration/a4.jpg'),

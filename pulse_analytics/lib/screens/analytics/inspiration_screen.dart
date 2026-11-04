@@ -122,7 +122,15 @@ class _PostRow extends StatelessWidget {
   final InspirationPost post;
   final int rank;
 
-  /// Stable colour pair per post, so the placeholder cover keeps its look.
+  /// Stock photo (one of ten) chosen from the caption, so it stays the same.
+  String get _stockPhoto =>
+      'assets/inspiration/c${post.caption.codeUnits.fold<int>(0, (a, b) => a + b) % 10 + 1}.jpg';
+
+  /// Stock profile photo (one of ten) chosen from the author name.
+  String get _stockAvatar =>
+      'assets/inspiration/a${post.author.codeUnits.fold<int>(0, (a, b) => a + b) % 10 + 1}.jpg';
+
+  /// Stable colour pair per post, used behind the pictures.
   List<Color> get _colors {
     final h = post.caption.hashCode.abs() % 360;
     return [
@@ -152,13 +160,14 @@ class _PostRow extends StatelessWidget {
                     end: Alignment.bottomCenter,
                     colors: _colors,
                   ),
-                  image: post.image.trim().isEmpty
-                      ? null
-                      : DecorationImage(
-                          image: pictureProvider(post.image),
-                          fit: BoxFit.cover,
-                          onError: (_, _) {},
-                        ),
+                  // A stock photo stands in until a picture is uploaded.
+                  image: DecorationImage(
+                    image: post.image.trim().isEmpty
+                        ? AssetImage(_stockPhoto)
+                        : pictureProvider(post.image),
+                    fit: BoxFit.cover,
+                    onError: (_, _) {},
+                  ),
                 ),
               ),
             ),
@@ -194,23 +203,9 @@ class _PostRow extends StatelessWidget {
                         radius: 9,
                         backgroundColor: _colors.first,
                         backgroundImage: post.avatar.trim().isEmpty
-                            ? null
+                            ? AssetImage(_stockAvatar)
                             : pictureProvider(post.avatar),
-                        onBackgroundImageError: post.avatar.trim().isEmpty
-                            ? null
-                            : (_, _) {},
-                        child: post.avatar.trim().isNotEmpty
-                            ? null
-                            : Text(
-                                post.author.isEmpty
-                                    ? ''
-                                    : post.author[0].toUpperCase(),
-                                style: t(
-                                  10,
-                                  weight: FontWeight.w700,
-                                  color: Colors.white,
-                                ),
-                              ),
+                        onBackgroundImageError: (_, _) {},
                       ),
                       const SizedBox(width: 6),
                       Expanded(

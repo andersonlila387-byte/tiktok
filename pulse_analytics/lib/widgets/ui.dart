@@ -99,7 +99,7 @@ class PillChip extends StatelessWidget {
         padding: EdgeInsets.symmetric(horizontal: horizontal),
         decoration: BoxDecoration(
           color: selected ? Colors.black : const Color(0xFFEBEBEB),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.zero,
         ),
         child: Text(
           label,
@@ -134,21 +134,12 @@ class VideoCover extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final placeholder = DecoratedBox(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xFF5A5C66), Color(0xFF22232A)],
-        ),
-      ),
-      child: Center(
-        child: Icon(
-          LucideIcons.video,
-          size: width * 0.28,
-          color: Colors.white.withValues(alpha: 0.35),
-        ),
-      ),
+    // No picture yet (or it failed to load): show a stock photo, never a
+    // blank grey box. Uploading a picture replaces it.
+    final placeholder = Image.asset(
+      'assets/covers/default.jpg',
+      fit: BoxFit.cover,
+      errorBuilder: (_, _, _) => const ColoredBox(color: Color(0xFF3A3B42)),
     );
     return ClipRRect(
       borderRadius: BorderRadius.circular(radius),

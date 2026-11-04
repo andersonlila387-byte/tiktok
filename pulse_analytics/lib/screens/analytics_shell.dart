@@ -132,14 +132,37 @@ class _TopBar extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.only(right: 10),
               child: Container(
-                height: 24,
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                color: AppColors.topBar,
+                height: 26,
+                padding: const EdgeInsets.symmetric(horizontal: 9),
+                decoration: BoxDecoration(
+                  color: AppColors.topBar,
+                  borderRadius: BorderRadius.circular(13),
+                  border: Border.all(color: AppColors.border),
+                ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(LucideIcons.userStar, size: 11),
-                    const SizedBox(width: 3),
+                    // Solid person with a small star, like TikTok's icon.
+                    const SizedBox(
+                      width: 15,
+                      height: 15,
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Icon(Icons.person, size: 14, color: AppColors.text),
+                          Positioned(
+                            right: -3,
+                            bottom: -1,
+                            child: Icon(
+                              Icons.star,
+                              size: 8,
+                              color: AppColors.text,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 4),
                     Text(
                       'TikTok Studio',
                       style: t(10.5, weight: FontWeight.w500),
@@ -164,7 +187,7 @@ class _VideoHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final stats = <(Widget, int)>[
-      (const Icon(Icons.play_arrow, size: 28), post.views),
+      (const Icon(Icons.play_arrow, size: 40), post.views),
       (const Icon(Icons.favorite), post.likes),
       (const Icon(Icons.sms), post.comments),
       (Transform.flip(flipX: true, child: const Icon(Icons.reply)), post.shares),

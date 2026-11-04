@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:provider/provider.dart';
 
 import '../../models/analytics_data.dart';
+import '../../providers/analytics_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/formatters.dart';
+import '../../utils/metric_series.dart';
+import '../../widgets/metric_chart.dart';
 import '../../widgets/tab_page.dart';
 import '../../widgets/ui.dart';
 import '../../widgets/video_timeline.dart';
@@ -24,6 +29,8 @@ class OverviewScreen extends StatelessWidget {
           total: post.trafficTotal,
         ),
         _QueriesCard(queries: post.queries),
+        const _PromoteCard(),
+        const _OtherPostsCard(),
       ],
     );
   }
@@ -37,6 +44,21 @@ class _KeyMetricsCard extends StatefulWidget {
   @override
   State<_KeyMetricsCard> createState() => _KeyMetricsCardState();
 }
+
+String _seconds(double s) {
+  if (s >= 3600) return '${plain(s / 3600, 1)}h';
+  if (s >= 60) return '${(s / 60).round()}m';
+  return '${s.round()}s';
+}
+
+/// Left-axis labels for the five tiles, in tile order.
+final _axisFormats = <String Function(double)>[
+  (v) => abbr(v),
+  _seconds,
+  (v) => '${plain(v, 1)}s',
+  (v) => '${plain(v, 1)}%',
+  (v) => abbr(v),
+];
 
 class _KeyMetricsCardState extends State<_KeyMetricsCard> {
   int _selected = 0;
@@ -77,7 +99,7 @@ class _KeyMetricsCardState extends State<_KeyMetricsCard> {
                           color: i == _selected
                               ? AppColors.selectedTile
                               : Colors.white,
-                          borderRadius: BorderRadius.circular(3),
+                          borderRadius: BorderRadius.circular(6),
                           border: Border.all(
                             color: i == _selected
                                 ? AppColors.accent
@@ -113,6 +135,14 @@ class _KeyMetricsCardState extends State<_KeyMetricsCard> {
               );
             },
           ),
+          if (chartAvailable(p, DateTime.now())) ...[
+            const SizedBox(height: 16),
+            MetricChart(
+              key: ValueKey('chart-${p.id}-$_selected'),
+              series: metricSeries(p, _selected, DateTime.now()),
+              format: _axisFormats[_selected],
+            ),
+          ],
           const SizedBox(height: 12),
           Container(
             width: double.infinity,
@@ -291,6 +321,124 @@ class _QueriesCard extends StatelessWidget {
                 ),
               ),
         ],
+      ),
+    );
+  }
+}
+
+/// Title, small grey line and an arrow at the right edge.
+class _LinkCard extends StatelessWidget {
+  const _LinkCard({required this.title, required this.body, this.onTap});
+
+  final String title;
+  final String body;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: TkCard(
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          title,
+                          style: t(17, weight: FontWeight.w700, height: 1.2),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      const Icon(
+                        LucideIcons.info,
+                        size: 15,
+                        color: Color(0xFF6C6D72),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  BodyText(body),
+                ],
+              ),
+            ),
+            const Icon(LucideIcons.chevronRight, size: 20, color: AppColors.text),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PromoteCard extends StatelessWidget {
+  const _PromoteCard();
+
+  @override
+  Widget build(BuildContext context) => const _LinkCard(
+    title: 'Want more traffic?',
+    body: 'Use Promote to grow your audience.',
+  );
+}
+
+/// Opens a list of every posted video so the visitor can switch to another.
+class _OtherPostsCard extends StatelessWidget {
+  const _OtherPostsCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return _LinkCard(
+      title: 'View other posts',
+      body: 'See the analytics of your other videos.',
+      onTap: () => showModalBottomSheet<void>(
+        context: context,
+        backgroundColor: Colors.white,
+        showDragHandle: true,
+        builder: (sheet) {
+          final p = context.read<AnalyticsProvider>();
+          final posts = p.data.posts;
+          return SafeArea(
+            child: ListView(
+              shrinkWrap: true,
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              children: [
+                Text('Your posts', style: t(17, weight: FontWeight.w700)),
+                const SizedBox(height: 8),
+                for (final post in posts)
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: VideoCover(
+                      url: post.thumbnailUrl,
+                      width: 40,
+                      height: 54,
+                      radius: 3,
+                    ),
+                    title: Text(
+                      post.caption.isEmpty ? '(no caption)' : post.caption,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: t(15, weight: FontWeight.w500),
+                    ),
+                    subtitle: Text(
+                      '${grouped(post.views)} views · ${postedOn(post.postedAt)}',
+                      style: t(13, color: AppColors.muted),
+                    ),
+                    trailing: post.id == p.post?.id
+                        ? const Icon(LucideIcons.check, size: 18)
+                        : null,
+                    onTap: () {
+                      p.selectPost(post.id);
+                      Navigator.pop(sheet);
+                    },
+                  ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }

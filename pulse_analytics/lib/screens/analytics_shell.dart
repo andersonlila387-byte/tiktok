@@ -164,7 +164,7 @@ class _VideoHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final stats = <(Widget, int)>[
-      (const Icon(Icons.play_arrow_rounded), post.views),
+      (const Icon(Icons.play_arrow, size: 28), post.views),
       (const Icon(Icons.favorite), post.likes),
       (const Icon(Icons.sms), post.comments),
       (Transform.flip(flipX: true, child: const Icon(Icons.reply)), post.shares),
@@ -223,7 +223,13 @@ class _VideoHeader extends StatelessWidget {
                               size: 20,
                               color: Color(0xFF8A8B90),
                             ),
-                            child: stats[i].$1,
+                            child: SizedBox(
+                              height: 22,
+                              child: OverflowBox(
+                                maxHeight: 44,
+                                child: Center(child: stats[i].$1),
+                              ),
+                            ),
                           ),
                           const SizedBox(height: 8),
                           Text(

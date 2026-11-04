@@ -218,7 +218,7 @@ class Post {
     return Post(
       id: now.microsecondsSinceEpoch.toRadixString(36),
       caption: 'New video',
-      thumbnailUrl: '',
+      thumbnailUrl: 'asset:assets/covers/default.jpg',
       postedAt: DateTime(now.year, now.month, now.day, now.hour, now.minute),
       updatedAt: now,
       traffic: [
@@ -288,8 +288,8 @@ class AnalyticsData {
         Post(
           id: 'sample',
           caption: 'Sample video',
-          thumbnailUrl: '',
-          postedAt: DateTime(2024, 7, 3, 11, 52),
+          thumbnailUrl: 'asset:assets/covers/sample.jpg',
+          postedAt: DateTime(now.year, now.month, now.day - 6, 11, 52),
           updatedAt: now,
           durationSec: 55.87,
           views: 39,
@@ -319,20 +319,20 @@ class AnalyticsData {
       ],
       inspiration: {
         'trending': [
-          InspirationPost('Morning routine in 30 seconds #fyp', '6M', 'creator_one'),
-          InspirationPost('Three quick tips for better lighting', '566.7K', 'studio.tips'),
-          InspirationPost('Trying the viral recipe so you do not have to', '5.4M', 'kitchen.diary'),
-          InspirationPost('A day in my life as a student', '2.5M', 'campus.life'),
-          InspirationPost('Easy room makeover under budget', '440.4K', 'home.ideas'),
+          InspirationPost('Easy breakfast ideas in 30 seconds #fyp', '6M', 'kitchen.diary', image: 'asset:assets/inspiration/c1.jpg', avatar: 'asset:assets/inspiration/a1.jpg'),
+          InspirationPost('Fresh strawberry dessert for tonight', '566.7K', 'sweet.bites', image: 'asset:assets/inspiration/c2.jpg', avatar: 'asset:assets/inspiration/a2.jpg'),
+          InspirationPost('My pug wrapped up like a burrito', '5.4M', 'pug.life', image: 'asset:assets/inspiration/c3.jpg', avatar: 'asset:assets/inspiration/a3.jpg'),
+          InspirationPost('New puppy first day at home', '2.5M', 'happy.paws', image: 'asset:assets/inspiration/c4.jpg', avatar: 'asset:assets/inspiration/a4.jpg'),
+          InspirationPost('Morning walk with my best friend', '440.4K', 'daily.walks', image: 'asset:assets/inspiration/c5.jpg', avatar: 'asset:assets/inspiration/a5.jpg'),
         ],
         'similar': [
-          InspirationPost('Behind the scenes of a studio shoot', '88.2K', 'studio.tips'),
-          InspirationPost('Quick workout you can do anywhere', '64.9K', 'fit.daily'),
-          InspirationPost('Before and after makeover', '52.3K', 'home.ideas'),
+          InspirationPost('Kayaking through a quiet river', '88.2K', 'outdoor.days', image: 'asset:assets/inspiration/c6.jpg', avatar: 'asset:assets/inspiration/a6.jpg'),
+          InspirationPost('Berry picking weekend', '64.9K', 'farm.fresh', image: 'asset:assets/inspiration/c7.jpg', avatar: 'asset:assets/inspiration/a7.jpg'),
+          InspirationPost('Weekend views worth the drive', '52.3K', 'road.trips', image: 'asset:assets/inspiration/c8.jpg', avatar: 'asset:assets/inspiration/a8.jpg'),
         ],
         'followers': [
-          InspirationPost('Pet reacts to a new toy', '120.5K', 'pet.world'),
-          InspirationPost('Street style outfit check', '97.1K', 'style.walk'),
+          InspirationPost('Simple home corner makeover', '120.5K', 'home.ideas', image: 'asset:assets/inspiration/c9.jpg', avatar: 'asset:assets/inspiration/a9.jpg'),
+          InspirationPost('City walk after the rain', '97.1K', 'street.walk', image: 'asset:assets/inspiration/c10.jpg', avatar: 'asset:assets/inspiration/a10.jpg'),
         ],
       },
     );

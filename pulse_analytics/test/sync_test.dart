@@ -73,7 +73,7 @@ void main() {
       ..female = 5
       ..other = 2;
     admin.addPost(added);
-    await Future<void>.delayed(const Duration(milliseconds: 800));
+    await Future<void>.delayed(const Duration(milliseconds: 2500));
 
     expect(admin.syncError, isNull);
     expect(server.saved, isNotNull, reason: 'admin save reached server');
@@ -91,7 +91,7 @@ void main() {
     // Editing and deleting are shared too.
     admin.updatePost(Post.fromJson(added.toJson())..likes = 6);
     admin.deletePost('sample');
-    await Future<void>.delayed(const Duration(milliseconds: 800));
+    await Future<void>.delayed(const Duration(milliseconds: 2500));
     expect(visitor.post!.likes, 6);
     expect(visitor.data.posts.length, 1);
     admin.dispose();

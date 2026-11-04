@@ -7,6 +7,7 @@ import 'package:pulse_analytics/providers/analytics_provider.dart';
 import 'package:pulse_analytics/screens/admin/inspiration_editor_screen.dart';
 import 'package:pulse_analytics/screens/admin/post_editor_screen.dart';
 import 'package:pulse_analytics/services/storage_service.dart';
+import 'package:pulse_analytics/widgets/metric_chart.dart';
 import 'package:pulse_analytics/theme/app_theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -28,6 +29,7 @@ void main() {
     addTearDown(tester.view.reset);
     final p = AnalyticsProvider(LocalStorageService(), pollInterval: null);
     await p.load();
+    p.data.posts.first.postedAt = DateTime(2024, 7, 3, 11, 52);
     if (seed != null) seed(p.data);
     await tester.pumpWidget(
       ChangeNotifierProvider.value(value: p, child: const PulseApp()),
@@ -90,7 +92,7 @@ void main() {
       find.text('Post videos like these for possible virality.'),
       findsOneWidget,
     );
-    expect(find.text('Morning routine in 30 seconds #fyp'), findsOneWidget);
+    expect(find.text('Easy breakfast ideas in 30 seconds #fyp'), findsOneWidget);
     await tester.pumpAndSettle();
   });
 
@@ -212,7 +214,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('Cover picture'), findsNWidgets(before));
-    expect(find.text('Upload'), findsWidgets);
+    expect(find.text('Replace'), findsWidgets);
 
     await tester.tap(find.text('Add a post'));
     await tester.pumpAndSettle();
@@ -236,5 +238,57 @@ void main() {
     });
     expect(find.byType(Image), findsWidgets);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('overview shows a real chart for a recent post only', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      const Size(390, 1400),
+      seed: (d) => d.posts.first.postedAt = DateTime.now().subtract(
+        const Duration(days: 3),
+      ),
+    );
+    expect(find.byType(MetricChart), findsOneWidget);
+    await tester.tap(find.text('Total play time'));
+    await tester.pumpAndSettle();
+    expect(find.byType(MetricChart), findsOneWidget);
+    expect(
+      find.textContaining('Data chart is only shown for 365 days'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('no chart once the post is older than 365 days', (tester) async {
+    await pump(tester, const Size(390, 1400));
+    expect(find.byType(MetricChart), findsNothing);
+    expect(
+      find.textContaining('Data chart is only shown for 365 days'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('promote card and view other posts switch the video', (
+    tester,
+  ) async {
+    final p = await pump(
+      tester,
+      const Size(390, 2600),
+      seed: (d) => d.posts.add(
+        Post.blank()
+          ..id = 'second'
+          ..caption = 'Second video',
+      ),
+    );
+    expect(find.text('Want more traffic?'), findsOneWidget);
+    expect(find.text('Use Promote to grow your audience.'), findsOneWidget);
+    expect(find.text('View other posts'), findsOneWidget);
+    await tester.tap(find.text('View other posts'));
+    await tester.pumpAndSettle();
+    expect(find.text('Your posts'), findsOneWidget);
+    await tester.tap(find.text('Second video'));
+    await tester.pumpAndSettle();
+    expect(p.post!.id, 'second');
   });
 }

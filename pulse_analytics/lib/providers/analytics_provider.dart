@@ -31,8 +31,17 @@ class AnalyticsProvider extends ChangeNotifier {
   bool get loading => _data == null;
   AnalyticsData get data => _data!;
 
+  /// Video picked with "View other posts"; wins over the link's `?v=`.
+  String? _selectedId;
+
   /// The video the visitor is looking at, or null when none was posted yet.
-  Post? get post => data.byId(requestedPostId);
+  Post? get post => data.byId(_selectedId ?? requestedPostId);
+
+  /// Switches the page to another video ("View other posts").
+  void selectPost(String id) {
+    _selectedId = id;
+    notifyListeners();
+  }
 
   Future<void> load() async {
     _data = await _storage.load() ?? AnalyticsData.sample();

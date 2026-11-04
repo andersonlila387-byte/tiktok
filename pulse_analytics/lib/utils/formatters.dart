@@ -13,6 +13,9 @@ const _months = [
   'Dec',
 ];
 
+/// "Nov 4"
+String shortDate(DateTime d) => '${_months[d.month - 1]} ${d.day}';
+
 String grouped(int n) {
   final s = n.abs().toString();
   final buf = StringBuffer();

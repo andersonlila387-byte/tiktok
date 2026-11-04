@@ -31,6 +31,7 @@ final _decoded = <String, ImageProvider>{};
 ImageProvider pictureProvider(String url) {
   final u = url.trim();
   return _decoded.putIfAbsent(u, () {
+    if (u.startsWith('asset:')) return AssetImage(u.substring(6));
     if (u.startsWith('data:')) {
       return MemoryImage(UriData.parse(u).contentAsBytes());
     }

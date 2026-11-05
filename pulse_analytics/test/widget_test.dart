@@ -291,4 +291,32 @@ void main() {
     await tester.pumpAndSettle();
     expect(p.post!.id, 'second');
   });
+
+  testWidgets('a post from months ago still gets a chart', (tester) async {
+    await pump(
+      tester,
+      const Size(390, 1400),
+      seed: (d) {
+        d.posts.first
+          ..postedAt = DateTime.now().subtract(const Duration(days: 150))
+          ..views = 39;
+      },
+    );
+    expect(find.byType(MetricChart), findsOneWidget);
+  });
+
+  testWidgets('a recent post with no views still shows its chart', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      const Size(390, 1400),
+      seed: (d) {
+        d.posts.first
+          ..postedAt = DateTime.now().subtract(const Duration(days: 2))
+          ..views = 0;
+      },
+    );
+    expect(find.byType(MetricChart), findsOneWidget);
+  });
 }

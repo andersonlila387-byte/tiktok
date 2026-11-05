@@ -94,7 +94,7 @@ class _KeyMetricsCardState extends State<_KeyMetricsCard> {
                       child: Container(
                         width: w,
                         height: 92,
-                        padding: const EdgeInsets.fromLTRB(12, 12, 8, 8),
+                        padding: const EdgeInsets.fromLTRB(12, 12, 8, 18),
                         decoration: BoxDecoration(
                           color: i == _selected
                               ? const Color(0xFFF4F9FF)
@@ -270,14 +270,13 @@ class ShareRow extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: (percent ?? 0) / 100,
-              minHeight: 7,
-              backgroundColor: AppColors.track,
-              color: AppColors.accent,
-            ),
+          // Square ends and a lighter blue (Age, Locations, Traffic sources).
+          LinearProgressIndicator(
+            value: (percent ?? 0) / 100,
+            minHeight: 7,
+            borderRadius: BorderRadius.zero,
+            backgroundColor: const Color(0xFFEDEDED),
+            color: AppColors.accentMid,
           ),
         ],
       ),

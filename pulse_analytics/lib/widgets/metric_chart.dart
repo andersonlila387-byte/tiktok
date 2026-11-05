@@ -26,8 +26,12 @@ class MetricChart extends StatelessWidget {
 
 double _niceMax(double v) {
   if (v <= 0) return 1;
+  // Largest power of ten at or below v (works for values under 1 too).
   var step = 1.0;
-  while (step * 10 < v) {
+  while (step > v) {
+    step /= 10;
+  }
+  while (step * 10 <= v) {
     step *= 10;
   }
   for (final m in [1, 2, 2.5, 5, 10]) {

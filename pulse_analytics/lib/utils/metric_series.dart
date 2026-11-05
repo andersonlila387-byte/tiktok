@@ -34,7 +34,7 @@ int daysSincePosted(Post post, DateTime today) {
 /// True while the video is recent enough for the daily chart.
 bool chartAvailable(Post post, DateTime today) {
   final d = daysSincePosted(post, today);
-  return d >= 0 && d <= kChartDays && post.views > 0;
+  return d >= 0 && d <= kChartDays;
 }
 
 /// A believable day-by-day shape for the [metric] tile (0 views, 1 total play
@@ -43,7 +43,8 @@ bool chartAvailable(Post post, DateTime today) {
 /// curve, so it does not change between visits or devices.
 MetricSeries metricSeries(Post post, int metric, DateTime today) {
   final since = math.max(0, daysSincePosted(post, today));
-  final n = math.min(math.max(since + 1, 7), 28);
+  // The whole life of the video so far (at least a week), up to the limit.
+  final n = math.min(math.max(since + 1, 7), kChartDays + 1);
   final base = DateTime(today.year, today.month, today.day);
   final dates = [
     for (var i = 0; i < n; i++) base.subtract(Duration(days: n - 1 - i)),

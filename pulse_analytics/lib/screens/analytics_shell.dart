@@ -106,32 +106,32 @@ class _TopBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       height: 56,
-      child: Stack(
-        alignment: Alignment.center,
+      child: Row(
         children: [
-          Align(
-            alignment: Alignment.centerLeft,
-            child: IconButton(
-              tooltip: 'Back',
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              constraints: const BoxConstraints(minWidth: 56, minHeight: 56),
-              icon: const Icon(LucideIcons.arrowLeft, size: 24),
-              onPressed: () => Navigator.maybePop(context),
+          IconButton(
+            tooltip: 'Back',
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            constraints: const BoxConstraints(minWidth: 56, minHeight: 56),
+            icon: const Icon(LucideIcons.arrowLeft, size: 24),
+            onPressed: () => Navigator.maybePop(context),
+          ),
+          // The title sits in the middle of the space between the arrow and
+          // the "TikTok Studio" label.
+          Expanded(
+            child: Center(
+              child: GestureDetector(
+                onLongPress: () => openAdmin(context),
+                child: Text(
+                  'Video analytics',
+                  maxLines: 1,
+                  style: t(15, weight: FontWeight.w700),
+                ),
+              ),
             ),
           ),
-          GestureDetector(
-            onLongPress: () => openAdmin(context),
-            child: Text(
-              'Video analytics',
-              maxLines: 1,
-              style: t(15, weight: FontWeight.w700),
-            ),
-          ),
-          Align(
-            alignment: Alignment.centerRight,
-            child: Padding(
-              padding: const EdgeInsets.only(right: 10),
-              child: Container(
+          Padding(
+            padding: const EdgeInsets.only(right: 10),
+            child: Container(
                 height: 26,
                 padding: const EdgeInsets.symmetric(horizontal: 9),
                 decoration: BoxDecoration(
@@ -171,7 +171,6 @@ class _TopBar extends StatelessWidget {
                 ),
               ),
             ),
-          ),
         ],
       ),
     );

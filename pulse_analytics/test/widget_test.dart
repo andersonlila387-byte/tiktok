@@ -48,7 +48,7 @@ void main() {
   for (final w in [360.0, 390.0, 430.0]) {
     testWidgets('header and overview render at ${w.toInt()}px', (tester) async {
       await pump(tester, Size(w, 900));
-      expect(find.text('Video analytics'), findsOneWidget);
+      expect(find.text('Video analysis'), findsOneWidget);
       expect(find.text('TikTok Studio'), findsOneWidget);
       expect(find.text('55.87s'), findsOneWidget);
       expect(find.text('Posted on Jul 3, 2024, 11:52 AM'), findsOneWidget);

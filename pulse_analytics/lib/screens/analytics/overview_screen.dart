@@ -9,18 +9,30 @@ import '../../utils/formatters.dart';
 import '../../utils/metric_series.dart';
 import '../../widgets/metric_chart.dart';
 import '../../widgets/tab_page.dart';
+import '../../widgets/tt_icons.dart';
 import '../../widgets/ui.dart';
 import '../../widgets/video_timeline.dart';
 
-class OverviewScreen extends StatelessWidget {
+class OverviewScreen extends StatefulWidget {
   const OverviewScreen({super.key, required this.post});
 
   final Post post;
 
   @override
+  State<OverviewScreen> createState() => _OverviewScreenState();
+}
+
+class _OverviewScreenState extends State<OverviewScreen> {
+  bool _showBanner = true;
+
+  Post get post => widget.post;
+
+  @override
   Widget build(BuildContext context) {
     return TabPage(
       children: [
+        if (_showBanner)
+          _StudioBanner(onClose: () => setState(() => _showBanner = false)),
         _KeyMetricsCard(post: post),
         _RetentionCard(post: post),
         _TallyCard(
@@ -44,6 +56,13 @@ class _KeyMetricsCard extends StatefulWidget {
   @override
   State<_KeyMetricsCard> createState() => _KeyMetricsCardState();
 }
+
+/// Key metrics are live for a recently updated video; older figures show the
+/// date they were last edited.
+String _updatedLine(DateTime updatedAt) =>
+    DateTime.now().difference(updatedAt).inDays < 7
+    ? 'Updated in real time.'
+    : 'Updated on ${numericDate(updatedAt)}.';
 
 String _seconds(double s) {
   if (s >= 3600) return '${plain(s / 3600, 1)}h';
@@ -79,31 +98,31 @@ class _KeyMetricsCardState extends State<_KeyMetricsCard> {
         children: [
           const CardTitle('Key metrics'),
           const SizedBox(height: 4),
-          BodyText('Updated on ${numericDate(p.updatedAt)}.'),
-          const SizedBox(height: 12),
+          BodyText(_updatedLine(p.updatedAt)),
+          const SizedBox(height: 15),
           LayoutBuilder(
             builder: (context, box) {
-              final w = (box.maxWidth - 8) / 2;
+              final w = (box.maxWidth - 7) / 2;
               return Wrap(
-                spacing: 8,
-                runSpacing: 8,
+                spacing: 7,
+                runSpacing: 7,
                 children: [
                   for (var i = 0; i < tiles.length; i++)
                     GestureDetector(
                       onTap: () => setState(() => _selected = i),
                       child: Container(
                         width: w,
-                        height: 92,
-                        padding: const EdgeInsets.fromLTRB(12, 12, 8, 18),
+                        height: 66.5,
+                        padding: const EdgeInsets.fromLTRB(10.5, 11, 6, 0),
                         decoration: BoxDecoration(
                           color: i == _selected
-                              ? const Color(0xFFF4F9FF)
+                              ? AppColors.selectedTile
                               : Colors.white,
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(6),
                           border: Border.all(
                             color: i == _selected
-                                ? const Color(0xFF8FC2F2)
-                                : AppColors.divider,
+                                ? AppColors.selectedTileBorder
+                                : AppColors.border,
                           ),
                         ),
                         child: Column(
@@ -113,15 +132,16 @@ class _KeyMetricsCardState extends State<_KeyMetricsCard> {
                               tiles[i].$1,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: t(13.5, height: 1.2),
+                              style: t(11, height: 1.2),
                             ),
-                            const Spacer(),
+                            const SizedBox(height: 4),
                             FittedBox(
                               fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerLeft,
                               child: Text(
                                 tiles[i].$2,
                                 style: t(
-                                  23,
+                                  20,
                                   weight: FontWeight.w700,
                                   height: 1.1,
                                 ),
@@ -155,6 +175,61 @@ class _KeyMetricsCardState extends State<_KeyMetricsCard> {
               'Data chart is only shown for 365 days from the date your '
               'video is posted.',
               color: Color(0xFF6C6D72),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// "Get the TikTok Studio app" promo at the top of Overview; the cross hides it.
+class _StudioBanner extends StatelessWidget {
+  const _StudioBanner({required this.onClose});
+
+  final VoidCallback onClose;
+
+  @override
+  Widget build(BuildContext context) {
+    return TkCard(
+      padding: const EdgeInsets.fromLTRB(14, 10.5, 8, 10.5),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const StudioLogo(size: 47),
+          const SizedBox(width: 13),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 1),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Get the TikTok Studio app',
+                    style: t(12, weight: FontWeight.w700, height: 1.25),
+                  ),
+                  const SizedBox(height: 1),
+                  const BodyText('View your analytics from the last 365 days.'),
+                  const SizedBox(height: 1),
+                  Text(
+                    'Download',
+                    style: t(
+                      12,
+                      weight: FontWeight.w500,
+                      color: const Color(0xFFD40B4C),
+                      height: 1.25,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: onClose,
+            child: const Padding(
+              padding: EdgeInsets.fromLTRB(8, 11, 14, 8),
+              child: TtIconView(TtIcon.close, color: Color(0xFF7E7E7E)),
             ),
           ),
         ],

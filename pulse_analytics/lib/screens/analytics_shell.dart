@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:provider/provider.dart';
 
 import '../models/analytics_data.dart';
 import '../providers/analytics_provider.dart';
 import '../theme/app_theme.dart';
 import '../utils/formatters.dart';
+import '../widgets/tt_icons.dart';
 import '../widgets/ui.dart';
 import 'admin/admin_screen.dart';
 import 'analytics/engagement_screen.dart';
@@ -98,7 +98,8 @@ class _VideoPage extends StatelessWidget {
 }
 
 /// Back arrow, title and the "TikTok Studio" pill. Long-press the title to
-/// reach the admin screen.
+/// reach the admin screen. The title is centred on the screen, not in the
+/// space left between the arrow and the pill.
 class _TopBar extends StatelessWidget {
   const _TopBar();
 
@@ -106,71 +107,58 @@ class _TopBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       height: 56,
-      child: Row(
+      child: Stack(
+        alignment: Alignment.center,
         children: [
-          IconButton(
-            tooltip: 'Back',
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            constraints: const BoxConstraints(minWidth: 56, minHeight: 56),
-            icon: const Icon(LucideIcons.arrowLeft, size: 24),
-            onPressed: () => Navigator.maybePop(context),
-          ),
-          // The title sits in the middle of the space between the arrow and
-          // the "TikTok Studio" label.
-          Expanded(
-            child: Center(
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Semantics(
+              button: true,
+              label: 'Back',
               child: GestureDetector(
-                onLongPress: () => openAdmin(context),
-                child: Text(
-                  'Video analytics',
-                  maxLines: 1,
-                  style: t(15, weight: FontWeight.w700),
+                behavior: HitTestBehavior.opaque,
+                onTap: () => Navigator.maybePop(context),
+                child: const Padding(
+                  padding: EdgeInsets.only(left: 15.5, right: 24),
+                  child: TtIconView(TtIcon.back, color: Colors.black),
                 ),
               ),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.only(right: 10),
-            child: Container(
-                height: 26,
-                padding: const EdgeInsets.symmetric(horizontal: 9),
+          GestureDetector(
+            onLongPress: () => openAdmin(context),
+            child: Text(
+              'Video analysis',
+              maxLines: 1,
+              style: t(15, weight: FontWeight.w700),
+            ),
+          ),
+          Align(
+            alignment: Alignment.centerRight,
+            child: Padding(
+              padding: const EdgeInsets.only(right: 11),
+              child: Container(
+                height: 24,
+                padding: const EdgeInsets.symmetric(horizontal: 11),
                 decoration: BoxDecoration(
-                  color: AppColors.topBar,
-                  borderRadius: BorderRadius.circular(13),
-                  border: Border.all(color: AppColors.border),
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFEDEDED), width: 0.8),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Solid person with a small star, like TikTok's icon.
-                    const SizedBox(
-                      width: 15,
-                      height: 15,
-                      child: Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          Icon(Icons.person, size: 14, color: AppColors.text),
-                          Positioned(
-                            right: -3,
-                            bottom: -1,
-                            child: Icon(
-                              Icons.star,
-                              size: 8,
-                              color: AppColors.text,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 4),
+                    const TtIconView(TtIcon.person, color: Colors.black),
+                    const SizedBox(width: 2.5),
                     Text(
                       'TikTok Studio',
-                      style: t(10.5, weight: FontWeight.w500),
+                      style: t(10.5, weight: FontWeight.w400),
                     ),
                   ],
                 ),
               ),
             ),
+          ),
         ],
       ),
     );
@@ -185,29 +173,30 @@ class _VideoHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final stats = <(Widget, int)>[
-      (const Icon(Icons.play_arrow, size: 40), post.views),
-      (const Icon(Icons.favorite), post.likes),
-      (const Icon(Icons.sms), post.comments),
-      (Transform.flip(flipX: true, child: const Icon(Icons.reply)), post.shares),
-      (const Icon(Icons.bookmark), post.saves),
+    final stats = <(TtIcon, int)>[
+      (TtIcon.play, post.views),
+      (TtIcon.heart, post.likes),
+      (TtIcon.comment, post.comments),
+      (TtIcon.share, post.shares),
+      (TtIcon.bookmark, post.saves),
     ];
     return Padding(
-      padding: const EdgeInsets.only(top: 16, bottom: 18),
+      padding: const EdgeInsets.only(top: 12, bottom: 9),
       child: Column(
         children: [
           VideoCover(
             url: post.thumbnailUrl,
-            width: 80,
-            height: 107,
+            width: 70,
+            height: 93.5,
+            radius: 6,
             child: Align(
               alignment: Alignment.bottomCenter,
               child: Padding(
-                padding: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.only(bottom: 3.5),
                 child: Text(
                   '${plain(post.durationSec)}s',
                   style:
-                      t(13, weight: FontWeight.w700, color: Colors.white)
+                      t(12, weight: FontWeight.w700, color: Colors.white)
                           .copyWith(
                             shadows: const [
                               Shadow(blurRadius: 3, color: Colors.black54),
@@ -217,53 +206,61 @@ class _VideoHeader extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           Text(
             'Posted on ${postedOn(post.postedAt)}',
-            style: t(13, color: const Color(0xFF6C6D72)),
+            style: t(11, color: const Color(0xFF555555)),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 15),
-            child: IntrinsicHeight(
-              child: Row(
-                children: [
-                  for (var i = 0; i < stats.length; i++) ...[
-                    if (i > 0)
-                      const VerticalDivider(
-                        width: 1,
-                        thickness: 1,
-                        indent: 6,
-                        endIndent: 6,
-                        color: AppColors.border,
-                      ),
-                    Expanded(
-                      child: Column(
-                        children: [
-                          IconTheme(
-                            data: const IconThemeData(
-                              size: 20,
-                              color: Color(0xFF8A8B90),
-                            ),
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (var i = 0; i < stats.length; i++)
+                  Expanded(
+                    child: Stack(
+                      alignment: Alignment.topCenter,
+                      children: [
+                        if (i > 0)
+                          const Positioned(
+                            left: 0,
+                            top: 8.5,
                             child: SizedBox(
-                              height: 22,
-                              child: OverflowBox(
-                                maxHeight: 44,
-                                child: Center(child: stats[i].$1),
+                              height: 17.5,
+                              child: VerticalDivider(
+                                width: 1,
+                                thickness: 1,
+                                color: AppColors.border,
                               ),
                             ),
                           ),
-                          const SizedBox(height: 8),
-                          Text(
-                            abbr(stats[i].$2),
-                            style: t(15, weight: FontWeight.w500),
-                          ),
-                        ],
-                      ),
+                        Column(
+                          children: [
+                            SizedBox(
+                              height: 20,
+                              child: Center(
+                                child: TtIconView(
+                                  stats[i].$1,
+                                  color: AppColors.statIcon,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 5.5),
+                            Text(
+                              abbr(stats[i].$2),
+                              style: t(
+                                12.5,
+                                color: AppColors.statNumber,
+                                height: 1.2,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                  ],
-                ],
-              ),
+                  ),
+              ],
             ),
           ),
         ],
@@ -278,10 +275,10 @@ class _TabsDelegate extends SliverPersistentHeaderDelegate {
   final TabController controller;
 
   @override
-  double get minExtent => 46;
+  double get minExtent => 35;
 
   @override
-  double get maxExtent => 46;
+  double get maxExtent => 35;
 
   @override
   Widget build(
@@ -297,21 +294,21 @@ class _TabsDelegate extends SliverPersistentHeaderDelegate {
           controller: controller,
           isScrollable: true,
           tabAlignment: TabAlignment.start,
-          padding: const EdgeInsets.only(left: 15),
-          labelPadding: const EdgeInsets.symmetric(horizontal: 10),
+          padding: const EdgeInsets.only(left: 13.5),
+          labelPadding: const EdgeInsets.symmetric(horizontal: 12.5),
           labelColor: AppColors.text,
-          unselectedLabelColor: AppColors.muted,
-          labelStyle: t(14, weight: FontWeight.w600),
-          unselectedLabelStyle: t(14, weight: FontWeight.w500),
+          unselectedLabelColor: const Color(0xFF6C6C6C),
+          labelStyle: t(13, weight: FontWeight.w700),
+          unselectedLabelStyle: t(13, weight: FontWeight.w500),
           indicatorColor: AppColors.text,
           indicatorWeight: 2,
           indicatorSize: TabBarIndicatorSize.tab,
           overlayColor: const WidgetStatePropertyAll(Colors.transparent),
-          dividerColor: AppColors.border,
+          dividerColor: AppColors.tabDivider,
           dividerHeight: 1,
           tabs: [
             for (final tab in _AnalyticsShellState.tabs)
-              Tab(text: tab, height: 45),
+              Tab(text: tab, height: 34),
           ],
         ),
       ),

@@ -16,7 +16,8 @@ class EngagementScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final words = [...post.topWords]..sort((a, b) => b.count.compareTo(a.count));
+    final words = [...post.topWords]
+      ..sort((a, b) => b.count.compareTo(a.count));
     final peak = post.durationSec <= 0
         ? 0.0
         : (post.likePeakSec / post.durationSec).clamp(0.0, 1.0);

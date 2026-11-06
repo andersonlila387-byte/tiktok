@@ -126,7 +126,8 @@ class Post {
   int get locationsTotal => locations.fold(0, (a, b) => a + b.count);
   int get trafficTotal => traffic.fold(0, (a, b) => a + b.count);
 
-  int get returningViewers => (totalViewers - newViewers).clamp(0, totalViewers);
+  int get returningViewers =>
+      (totalViewers - newViewers).clamp(0, totalViewers);
   int get nonFollowerViewers =>
       (totalViewers - followerViewers).clamp(0, totalViewers);
 
@@ -180,10 +181,10 @@ class Post {
       id: j['id'] as String,
       caption: j['caption'] as String? ?? '',
       thumbnailUrl: j['thumbnailUrl'] as String? ?? '',
-      postedAt: DateTime.tryParse(j['postedAt'] as String? ?? '') ??
-          DateTime.now(),
-      updatedAt: DateTime.tryParse(j['updatedAt'] as String? ?? '') ??
-          DateTime.now(),
+      postedAt:
+          DateTime.tryParse(j['postedAt'] as String? ?? '') ?? DateTime.now(),
+      updatedAt:
+          DateTime.tryParse(j['updatedAt'] as String? ?? '') ?? DateTime.now(),
       durationSec: d('durationSec'),
       views: i('views'),
       likes: i('likes'),
@@ -319,20 +320,80 @@ class AnalyticsData {
       ],
       inspiration: {
         'trending': [
-          InspirationPost('Fresh ingredients for dinner tonight #fyp', '6M', 'kitchen.diary', image: 'asset:assets/inspiration/c1.jpg', avatar: 'asset:assets/inspiration/a1.jpg'),
-          InspirationPost('Fresh strawberry dessert for tonight', '566.7K', 'sweet.bites', image: 'asset:assets/inspiration/c2.jpg', avatar: 'asset:assets/inspiration/a2.jpg'),
-          InspirationPost('My pug wrapped up like a burrito', '5.4M', 'pug.life', image: 'asset:assets/inspiration/c3.jpg', avatar: 'asset:assets/inspiration/a3.jpg'),
-          InspirationPost('New puppy first day at home', '2.5M', 'happy.paws', image: 'asset:assets/inspiration/c4.jpg', avatar: 'asset:assets/inspiration/a4.jpg'),
-          InspirationPost('Morning walk with my best friend', '440.4K', 'daily.walks', image: 'asset:assets/inspiration/c5.jpg', avatar: 'asset:assets/inspiration/a5.jpg'),
+          InspirationPost(
+            'Fresh ingredients for dinner tonight #fyp',
+            '6M',
+            'kitchen.diary',
+            image: 'asset:assets/inspiration/c1.jpg',
+            avatar: 'asset:assets/inspiration/a1.jpg',
+          ),
+          InspirationPost(
+            'Fresh strawberry dessert for tonight',
+            '566.7K',
+            'sweet.bites',
+            image: 'asset:assets/inspiration/c2.jpg',
+            avatar: 'asset:assets/inspiration/a2.jpg',
+          ),
+          InspirationPost(
+            'My pug wrapped up like a burrito',
+            '5.4M',
+            'pug.life',
+            image: 'asset:assets/inspiration/c3.jpg',
+            avatar: 'asset:assets/inspiration/a3.jpg',
+          ),
+          InspirationPost(
+            'New puppy first day at home',
+            '2.5M',
+            'happy.paws',
+            image: 'asset:assets/inspiration/c4.jpg',
+            avatar: 'asset:assets/inspiration/a4.jpg',
+          ),
+          InspirationPost(
+            'Morning walk with my best friend',
+            '440.4K',
+            'daily.walks',
+            image: 'asset:assets/inspiration/c5.jpg',
+            avatar: 'asset:assets/inspiration/a5.jpg',
+          ),
         ],
         'similar': [
-          InspirationPost('Kayaking through a quiet river', '88.2K', 'outdoor.days', image: 'asset:assets/inspiration/c6.jpg', avatar: 'asset:assets/inspiration/a6.jpg'),
-          InspirationPost('Berry picking weekend', '64.9K', 'farm.fresh', image: 'asset:assets/inspiration/c7.jpg', avatar: 'asset:assets/inspiration/a7.jpg'),
-          InspirationPost('Weekend views worth the drive', '52.3K', 'road.trips', image: 'asset:assets/inspiration/c8.jpg', avatar: 'asset:assets/inspiration/a8.jpg'),
+          InspirationPost(
+            'Kayaking through a quiet river',
+            '88.2K',
+            'outdoor.days',
+            image: 'asset:assets/inspiration/c6.jpg',
+            avatar: 'asset:assets/inspiration/a6.jpg',
+          ),
+          InspirationPost(
+            'Berry picking weekend',
+            '64.9K',
+            'farm.fresh',
+            image: 'asset:assets/inspiration/c7.jpg',
+            avatar: 'asset:assets/inspiration/a7.jpg',
+          ),
+          InspirationPost(
+            'Weekend views worth the drive',
+            '52.3K',
+            'road.trips',
+            image: 'asset:assets/inspiration/c8.jpg',
+            avatar: 'asset:assets/inspiration/a8.jpg',
+          ),
         ],
         'followers': [
-          InspirationPost('Simple home corner makeover', '120.5K', 'home.ideas', image: 'asset:assets/inspiration/c9.jpg', avatar: 'asset:assets/inspiration/a9.jpg'),
-          InspirationPost('City walk after the rain', '97.1K', 'street.walk', image: 'asset:assets/inspiration/c10.jpg', avatar: 'asset:assets/inspiration/a10.jpg'),
+          InspirationPost(
+            'Simple home corner makeover',
+            '120.5K',
+            'home.ideas',
+            image: 'asset:assets/inspiration/c9.jpg',
+            avatar: 'asset:assets/inspiration/a9.jpg',
+          ),
+          InspirationPost(
+            'City walk after the rain',
+            '97.1K',
+            'street.walk',
+            image: 'asset:assets/inspiration/c10.jpg',
+            avatar: 'asset:assets/inspiration/a10.jpg',
+          ),
         ],
       },
     );

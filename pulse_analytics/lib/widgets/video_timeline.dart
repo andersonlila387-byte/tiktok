@@ -110,10 +110,7 @@ class _TimelineChartState extends State<TimelineChart> {
               pressedElevation: 4,
             ),
           ),
-          child: Slider(
-            value: _x,
-            onChanged: (v) => setState(() => _x = v),
-          ),
+          child: Slider(value: _x, onChanged: (v) => setState(() => _x = v)),
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -157,7 +154,10 @@ class _ChartPainter extends CustomPainter {
       _dashed(canvas, Offset(left, y), Offset(left + w + 6, y), grid);
       if (labels) {
         final tp = TextPainter(
-          text: TextSpan(text: text, style: t(12, color: AppColors.muted)),
+          text: TextSpan(
+            text: text,
+            style: t(12, color: AppColors.muted),
+          ),
           textDirection: TextDirection.ltr,
         )..layout();
         tp.paint(canvas, Offset(left + w + 10, y - tp.height / 2));

@@ -68,9 +68,8 @@ class _InspirationEditorScreenState extends State<InspirationEditorScreen> {
               onDelete: () => setState(() => _items.removeAt(i)),
             ),
           OutlinedButton.icon(
-            onPressed: () => setState(
-              () => _items.add(InspirationPost('', '', '')),
-            ),
+            onPressed: () =>
+                setState(() => _items.add(InspirationPost('', '', ''))),
             icon: const Icon(LucideIcons.plus, size: 18),
             label: const Text('Add a post'),
           ),
@@ -118,7 +117,10 @@ class _ItemCardState extends State<_ItemCard> {
           children: [
             Row(
               children: [
-                Text('#${widget.number}', style: t(14, weight: FontWeight.w700)),
+                Text(
+                  '#${widget.number}',
+                  style: t(14, weight: FontWeight.w700),
+                ),
                 const Spacer(),
                 IconButton(
                   tooltip: 'Remove this post',

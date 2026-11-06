@@ -45,22 +45,22 @@ class _AnalyticsShellState extends State<AnalyticsShell>
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Column(
-          children: [
-            const ColoredBox(
-              color: AppColors.topBar,
-              child: SafeArea(bottom: false, child: _TopBar()),
-            ),
-            Expanded(
-              child: p.loading
-                  ? const Center(child: CircularProgressIndicator())
-                  : post == null
-                  ? const Center(
-                      child: BodyText('No videos have been posted yet.'),
-                    )
-                  : _VideoPage(post: post, controller: _controller),
-            ),
-          ],
-        ),
+        children: [
+          const ColoredBox(
+            color: AppColors.topBar,
+            child: SafeArea(bottom: false, child: _TopBar()),
+          ),
+          Expanded(
+            child: p.loading
+                ? const Center(child: CircularProgressIndicator())
+                : post == null
+                ? const Center(
+                    child: BodyText('No videos have been posted yet.'),
+                  )
+                : _VideoPage(post: post, controller: _controller),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -119,7 +119,7 @@ class _TopBar extends StatelessWidget {
                 behavior: HitTestBehavior.opaque,
                 onTap: () => Navigator.maybePop(context),
                 child: const Padding(
-                  padding: EdgeInsets.only(left: 15.5, right: 24),
+                  padding: EdgeInsets.only(left: 16, right: 24),
                   child: TtIconView(TtIcon.back, color: Colors.black),
                 ),
               ),
@@ -138,18 +138,21 @@ class _TopBar extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.only(right: 11),
               child: Container(
-                height: 24,
-                padding: const EdgeInsets.symmetric(horizontal: 11),
+                height: 24.5,
+                padding: const EdgeInsets.only(left: 13, right: 12.5),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFEDEDED), width: 0.8),
+                  borderRadius: BorderRadius.circular(12.25),
+                  border: Border.all(
+                    color: const Color(0xFFEDEDED),
+                    width: 0.8,
+                  ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const TtIconView(TtIcon.person, color: Colors.black),
-                    const SizedBox(width: 3.1),
+                    const SizedBox(width: 2.5),
                     Text(
                       'TikTok Studio',
                       style: t(10, weight: FontWeight.w400),
@@ -181,7 +184,7 @@ class _VideoHeader extends StatelessWidget {
       (TtIcon.bookmark, post.saves),
     ];
     return Padding(
-      padding: const EdgeInsets.only(top: 12, bottom: 12.75),
+      padding: const EdgeInsets.only(top: 12, bottom: 14.25),
       child: Column(
         children: [
           VideoCover(
@@ -195,13 +198,12 @@ class _VideoHeader extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: 3.5),
                 child: Text(
                   '${plain(post.durationSec)}s',
-                  style:
-                      t(12, weight: FontWeight.w700, color: Colors.white)
-                          .copyWith(
-                            shadows: const [
-                              Shadow(blurRadius: 3, color: Colors.black54),
-                            ],
-                          ),
+                  style: t(12, weight: FontWeight.w700, color: Colors.white)
+                      .copyWith(
+                        shadows: const [
+                          Shadow(blurRadius: 3, color: Colors.black54),
+                        ],
+                      ),
                 ),
               ),
             ),
@@ -246,11 +248,11 @@ class _VideoHeader extends StatelessWidget {
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 7.5),
+                            const SizedBox(height: 6.5),
                             Text(
                               abbr(stats[i].$2),
                               style: t(
-                                11.5,
+                                12.8,
                                 color: AppColors.statNumber,
                                 height: 1.2,
                               ),
@@ -275,10 +277,10 @@ class _TabsDelegate extends SliverPersistentHeaderDelegate {
   final TabController controller;
 
   @override
-  double get minExtent => 34.25;
+  double get minExtent => 31.25;
 
   @override
-  double get maxExtent => 34.25;
+  double get maxExtent => 31.25;
 
   @override
   Widget build(
@@ -298,8 +300,8 @@ class _TabsDelegate extends SliverPersistentHeaderDelegate {
           labelPadding: const EdgeInsets.symmetric(horizontal: 12.5),
           labelColor: AppColors.text,
           unselectedLabelColor: const Color(0xFF6C6C6C),
-          labelStyle: t(12.5, weight: FontWeight.w700),
-          unselectedLabelStyle: t(12.8, weight: FontWeight.w500),
+          labelStyle: t(12.65, weight: FontWeight.w700),
+          unselectedLabelStyle: t(12.65, weight: FontWeight.w500),
           indicatorColor: AppColors.text,
           indicatorWeight: 2,
           indicatorSize: TabBarIndicatorSize.tab,
@@ -308,7 +310,7 @@ class _TabsDelegate extends SliverPersistentHeaderDelegate {
           dividerHeight: 1,
           tabs: [
             for (final tab in _AnalyticsShellState.tabs)
-              Tab(text: tab, height: 33.25),
+              Tab(text: tab, height: 30.25),
           ],
         ),
       ),

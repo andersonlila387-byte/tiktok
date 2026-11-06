@@ -97,7 +97,10 @@ class _TotalCard extends StatelessWidget {
                 Container(
                   width: 16,
                   height: 16,
-                  decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+                  decoration: BoxDecoration(
+                    color: color,
+                    shape: BoxShape.circle,
+                  ),
                   child: Icon(
                     change > 0 ? LucideIcons.arrowUp : LucideIcons.arrowDown,
                     size: 11,

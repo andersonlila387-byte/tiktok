@@ -202,7 +202,8 @@ class _PostEditorScreenState extends State<PostEditorScreen> {
   late final Map<_Lines, TextEditingController> _lines = {
     for (final f in _lineFields)
       f: TextEditingController(
-        text: [for (final t in f.get(_draft)) '${t.name}, ${t.count}'].join('\n'),
+        text: [for (final t in f.get(_draft)) '${t.name}, ${t.count}']
+            .join('\n'),
       ),
   };
   late DateTime _postedAt = _draft.postedAt;

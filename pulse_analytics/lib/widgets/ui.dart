@@ -9,8 +9,8 @@ class TkCard extends StatelessWidget {
   const TkCard({
     super.key,
     required this.child,
-    this.padding = const EdgeInsets.fromLTRB(14, 20, 14, 16),
-    this.margin = const EdgeInsets.only(bottom: 8),
+    this.padding = const EdgeInsets.fromLTRB(14, 19, 14, 16),
+    this.margin = const EdgeInsets.only(bottom: 7),
   });
 
   final Widget child;
@@ -44,11 +44,21 @@ class CardTitle extends StatelessWidget {
     return Row(
       children: [
         Flexible(
-          child: Text(text, style: t(14.2, weight: FontWeight.w700, height: 1.2)),
+          child: Text(
+            text,
+            style: t(14.2, weight: FontWeight.w700, height: 1.2),
+          ),
         ),
         if (info) ...[
           const SizedBox(width: 4),
-          const Icon(LucideIcons.info, size: 12.5, color: Color(0xFF777777)),
+          Transform.translate(
+            offset: const Offset(0, -2),
+            child: const Icon(
+              LucideIcons.info,
+              size: 12.5,
+              color: Color(0xFF777777),
+            ),
+          ),
         ],
       ],
     );
@@ -165,4 +175,5 @@ class VideoCover extends StatelessWidget {
 }
 
 /// Grey placeholder shown until a video has enough views for a section.
-const kNeedViewsNotice = 'Data will be shown when this video reaches 100 views.';
+const kNeedViewsNotice =
+    'Data will be shown when this video reaches 100 views.';

@@ -99,7 +99,7 @@ class _KeyMetricsCardState extends State<_KeyMetricsCard> {
           const CardTitle('Key metrics'),
           const SizedBox(height: 2),
           BodyText(_updatedLine(p.updatedAt)),
-          const SizedBox(height: 15),
+          const SizedBox(height: 16),
           LayoutBuilder(
             builder: (context, box) {
               final w = (box.maxWidth - 7) / 2;
@@ -113,7 +113,7 @@ class _KeyMetricsCardState extends State<_KeyMetricsCard> {
                       child: Container(
                         width: w,
                         height: 66.5,
-                        padding: const EdgeInsets.fromLTRB(10.5, 11, 6, 0),
+                        padding: const EdgeInsets.fromLTRB(9.5, 10.5, 6, 0),
                         decoration: BoxDecoration(
                           color: i == _selected
                               ? AppColors.selectedTile
@@ -192,7 +192,7 @@ class _StudioBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return TkCard(
-      padding: const EdgeInsets.fromLTRB(14, 10.5, 8, 10.5),
+      padding: const EdgeInsets.fromLTRB(14, 10.5, 8, 11),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -214,7 +214,7 @@ class _StudioBanner extends StatelessWidget {
                   Text(
                     'Download',
                     style: t(
-                      12,
+                      11.2,
                       weight: FontWeight.w500,
                       color: const Color(0xFFD40B4C),
                       height: 1.25,
@@ -228,7 +228,7 @@ class _StudioBanner extends StatelessWidget {
             behavior: HitTestBehavior.opaque,
             onTap: onClose,
             child: const Padding(
-              padding: EdgeInsets.fromLTRB(8, 3, 5, 8),
+              padding: EdgeInsets.fromLTRB(8, 3.5, 5.5, 8),
               child: TtIconView(TtIcon.close, color: Color(0xFF7E7E7E)),
             ),
           ),
@@ -441,7 +441,11 @@ class _LinkCard extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(LucideIcons.chevronRight, size: 20, color: AppColors.text),
+            const Icon(
+              LucideIcons.chevronRight,
+              size: 20,
+              color: AppColors.text,
+            ),
           ],
         ),
       ),

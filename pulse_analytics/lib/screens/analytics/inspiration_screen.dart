@@ -191,10 +191,7 @@ class _PostRow extends StatelessWidget {
                         color: AppColors.muted,
                       ),
                       const SizedBox(width: 4),
-                      Text(
-                        post.likes,
-                        style: t(14, color: AppColors.muted),
-                      ),
+                      Text(post.likes, style: t(14, color: AppColors.muted)),
                     ],
                   ),
                   Row(

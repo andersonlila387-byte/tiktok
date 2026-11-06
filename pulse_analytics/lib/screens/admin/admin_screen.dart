@@ -70,19 +70,17 @@ Future<void> openAdmin(BuildContext context) async {
   );
   // Not disposed: the dialog is still animating closed and reads it.
   if (ok == true && context.mounted) {
-    await Navigator.of(
-      context,
-    ).push(MaterialPageRoute<void>(builder: (_) => const AdminScreen()));
+    await Navigator.of(context)
+        .push(MaterialPageRoute<void>(builder: (_) => const AdminScreen()));
   }
 }
 
 class AdminScreen extends StatelessWidget {
   const AdminScreen({super.key});
 
-  Future<void> _edit(BuildContext context, Post? post) =>
-      Navigator.of(context).push(
-        MaterialPageRoute<void>(builder: (_) => PostEditorScreen(post: post)),
-      );
+  Future<void> _edit(BuildContext context, Post? post) => Navigator.of(
+    context,
+  ).push(MaterialPageRoute<void>(builder: (_) => PostEditorScreen(post: post)));
 
   @override
   Widget build(BuildContext context) {
@@ -183,10 +181,8 @@ class AdminScreen extends StatelessWidget {
                   value: '${d.inspiration[key]?.length ?? 0} posts',
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute<void>(
-                      builder: (_) => InspirationEditorScreen(
-                        listKey: key,
-                        title: title,
-                      ),
+                      builder: (_) =>
+                          InspirationEditorScreen(listKey: key, title: title),
                     ),
                   ),
                 ),
@@ -219,9 +215,8 @@ class AdminScreen extends StatelessWidget {
                 await p.resetToSample();
               } on StorageException catch (e) {
                 if (context.mounted) {
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(SnackBar(content: Text(e.message)));
+                  ScaffoldMessenger.of(context)
+                      .showSnackBar(SnackBar(content: Text(e.message)));
                 }
               }
             },

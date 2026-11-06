@@ -136,10 +136,10 @@ class _TopBar extends StatelessWidget {
           Align(
             alignment: Alignment.centerRight,
             child: Padding(
-              padding: const EdgeInsets.only(right: 11),
+              padding: const EdgeInsets.only(right: 9.75),
               child: Container(
                 height: 24.5,
-                padding: const EdgeInsets.only(left: 13, right: 12.5),
+                padding: const EdgeInsets.only(left: 12, right: 11),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12.25),
@@ -152,10 +152,10 @@ class _TopBar extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const TtIconView(TtIcon.person, color: Colors.black),
-                    const SizedBox(width: 2.5),
+                    const SizedBox(width: 1),
                     Text(
                       'TikTok Studio',
-                      style: t(10, weight: FontWeight.w400),
+                      style: t(10.25, weight: FontWeight.w400),
                     ),
                   ],
                 ),

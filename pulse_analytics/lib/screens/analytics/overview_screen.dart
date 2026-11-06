@@ -134,7 +134,7 @@ class _KeyMetricsCardState extends State<_KeyMetricsCard> {
                               overflow: TextOverflow.ellipsis,
                               style: t(11, height: 1.2),
                             ),
-                            const SizedBox(height: 4),
+                            const SizedBox(height: 5),
                             FittedBox(
                               fit: BoxFit.scaleDown,
                               alignment: Alignment.centerLeft,

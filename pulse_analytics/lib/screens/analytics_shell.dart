@@ -130,7 +130,7 @@ class _TopBar extends StatelessWidget {
             child: Text(
               'Video analysis',
               maxLines: 1,
-              style: t(15, weight: FontWeight.w700),
+              style: t(14.3, weight: FontWeight.w700),
             ),
           ),
           Align(
@@ -149,10 +149,10 @@ class _TopBar extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const TtIconView(TtIcon.person, color: Colors.black),
-                    const SizedBox(width: 2.5),
+                    const SizedBox(width: 3.1),
                     Text(
                       'TikTok Studio',
-                      style: t(10.5, weight: FontWeight.w400),
+                      style: t(10, weight: FontWeight.w400),
                     ),
                   ],
                 ),
@@ -181,7 +181,7 @@ class _VideoHeader extends StatelessWidget {
       (TtIcon.bookmark, post.saves),
     ];
     return Padding(
-      padding: const EdgeInsets.only(top: 12, bottom: 9),
+      padding: const EdgeInsets.only(top: 12, bottom: 12.75),
       child: Column(
         children: [
           VideoCover(
@@ -206,12 +206,12 @@ class _VideoHeader extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 7.5),
           Text(
             'Posted on ${postedOn(post.postedAt)}',
-            style: t(11, color: const Color(0xFF555555)),
+            style: t(10.05, color: const Color(0xFF555555)),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 13.5),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14),
             child: Row(
@@ -246,11 +246,11 @@ class _VideoHeader extends StatelessWidget {
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 5.5),
+                            const SizedBox(height: 7.5),
                             Text(
                               abbr(stats[i].$2),
                               style: t(
-                                12.5,
+                                11.5,
                                 color: AppColors.statNumber,
                                 height: 1.2,
                               ),
@@ -275,10 +275,10 @@ class _TabsDelegate extends SliverPersistentHeaderDelegate {
   final TabController controller;
 
   @override
-  double get minExtent => 35;
+  double get minExtent => 34.25;
 
   @override
-  double get maxExtent => 35;
+  double get maxExtent => 34.25;
 
   @override
   Widget build(
@@ -298,8 +298,8 @@ class _TabsDelegate extends SliverPersistentHeaderDelegate {
           labelPadding: const EdgeInsets.symmetric(horizontal: 12.5),
           labelColor: AppColors.text,
           unselectedLabelColor: const Color(0xFF6C6C6C),
-          labelStyle: t(13, weight: FontWeight.w700),
-          unselectedLabelStyle: t(13, weight: FontWeight.w500),
+          labelStyle: t(12.5, weight: FontWeight.w700),
+          unselectedLabelStyle: t(12.8, weight: FontWeight.w500),
           indicatorColor: AppColors.text,
           indicatorWeight: 2,
           indicatorSize: TabBarIndicatorSize.tab,
@@ -308,7 +308,7 @@ class _TabsDelegate extends SliverPersistentHeaderDelegate {
           dividerHeight: 1,
           tabs: [
             for (final tab in _AnalyticsShellState.tabs)
-              Tab(text: tab, height: 34),
+              Tab(text: tab, height: 33.25),
           ],
         ),
       ),

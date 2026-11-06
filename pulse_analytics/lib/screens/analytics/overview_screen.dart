@@ -97,7 +97,7 @@ class _KeyMetricsCardState extends State<_KeyMetricsCard> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const CardTitle('Key metrics'),
-          const SizedBox(height: 4),
+          const SizedBox(height: 2),
           BodyText(_updatedLine(p.updatedAt)),
           const SizedBox(height: 15),
           LayoutBuilder(
@@ -141,7 +141,7 @@ class _KeyMetricsCardState extends State<_KeyMetricsCard> {
                               child: Text(
                                 tiles[i].$2,
                                 style: t(
-                                  20,
+                                  19,
                                   weight: FontWeight.w700,
                                   height: 1.1,
                                 ),
@@ -197,7 +197,7 @@ class _StudioBanner extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const StudioLogo(size: 47),
-          const SizedBox(width: 13),
+          const SizedBox(width: 9),
           Expanded(
             child: Padding(
               padding: const EdgeInsets.only(top: 1),
@@ -228,7 +228,7 @@ class _StudioBanner extends StatelessWidget {
             behavior: HitTestBehavior.opaque,
             onTap: onClose,
             child: const Padding(
-              padding: EdgeInsets.fromLTRB(8, 11, 14, 8),
+              padding: EdgeInsets.fromLTRB(8, 3, 5, 8),
               child: TtIconView(TtIcon.close, color: Color(0xFF7E7E7E)),
             ),
           ),

@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 
 /// The solid icons TikTok Studio draws in its header (play, comment, share,
@@ -21,7 +19,7 @@ class TtIconView extends StatelessWidget {
     TtIcon.comment => const Size(16, 15),
     TtIcon.share => const Size(16.5, 14),
     TtIcon.bookmark => const Size(10, 12.5),
-    TtIcon.person => const Size(10, 9.5),
+    TtIcon.person => const Size(8.9, 10.5),
     TtIcon.back => const Size(18, 15),
     TtIcon.close => const Size(8.5, 8.5),
   };
@@ -175,30 +173,36 @@ class _TtIconPainter extends CustomPainter {
       ..close();
   }
 
+  /// Remix Icon "user-star-fill" (Apache-2.0): head, half-body and a star at
+  /// the lower right, as TikTok Studio's button shows it. The icon's own box is
+  /// 24 units with the artwork from x 4..22.755 and y 1..23.045.
   void _person(Canvas canvas, Size s, Paint fill) {
-    // Head and shoulders, with a small star at the lower right.
-    canvas.drawCircle(const Offset(3.4, 2.5), 2.4, fill);
-    final shoulders = Path()
-      ..moveTo(0, 9.2)
-      ..lineTo(0, 7.6)
-      ..quadraticBezierTo(0, 5.4, 2.3, 5.4)
-      ..lineTo(4.5, 5.4)
-      ..quadraticBezierTo(6.8, 5.4, 6.8, 7.6)
-      ..lineTo(6.8, 9.2)
+    final k = s.height / 22.045;
+    canvas.save();
+    canvas.scale(k, k);
+    canvas.translate(-4, -1);
+    canvas.drawCircle(const Offset(12, 7), 6, fill);
+    final body = Path()
+      ..moveTo(12, 14)
+      ..lineTo(12, 22)
+      ..lineTo(4, 22)
+      ..arcToPoint(const Offset(12, 14), radius: const Radius.circular(8))
       ..close();
-    canvas.drawPath(shoulders, fill);
-    final star = Path();
-    const c = Offset(7.6, 7.3);
-    const outer = 2.6;
-    const inner = 1.1;
-    for (var i = 0; i < 10; i++) {
-      final r = i.isEven ? outer : inner;
-      final a = -math.pi / 2 + i * math.pi / 5;
-      final p = Offset(c.dx + r * math.cos(a), c.dy + r * math.sin(a));
-      i == 0 ? star.moveTo(p.dx, p.dy) : star.lineTo(p.dx, p.dy);
-    }
-    star.close();
+    canvas.drawPath(body, fill);
+    final star = Path()
+      ..moveTo(18, 21.5)
+      ..lineTo(15.061, 23.045)
+      ..lineTo(15.622, 19.772)
+      ..lineTo(13.245, 17.455)
+      ..lineTo(16.531, 16.978)
+      ..lineTo(18, 14)
+      ..lineTo(19.47, 16.977)
+      ..lineTo(22.755, 17.455)
+      ..lineTo(20.378, 19.773)
+      ..lineTo(20.938, 23.045)
+      ..close();
     canvas.drawPath(star, fill);
+    canvas.restore();
   }
 
   @override
@@ -206,8 +210,8 @@ class _TtIconPainter extends CustomPainter {
       old.icon != icon || old.color != color;
 }
 
-/// The "TikTok Studio" app icon: black tile, TikTok note in white with a cyan
-/// and a red edge, and a white strip labelled "Studio" under a cyan/red wave.
+/// The official TikTok Studio app icon (the App Store artwork), with the
+/// rounded corners the app shows it with.
 class StudioLogo extends StatelessWidget {
   const StudioLogo({super.key, this.size = 47});
 
@@ -217,85 +221,13 @@ class StudioLogo extends StatelessWidget {
   Widget build(BuildContext context) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(size * 0.13),
-      child: SizedBox(
+      child: Image.asset(
+        'assets/brand/studio_icon.png',
         width: size,
         height: size,
-        child: CustomPaint(painter: _LogoPainter()),
+        fit: BoxFit.cover,
+        filterQuality: FilterQuality.high,
       ),
     );
   }
-}
-
-class _LogoPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size s) {
-    final w = s.width;
-    final h = s.height;
-    canvas.drawRect(Offset.zero & s, Paint()..color = Colors.black);
-
-    // Wave: cyan on the left, red on the right, then the white strip.
-    final wave = Path()
-      ..moveTo(0, h * 0.72)
-      ..quadraticBezierTo(w * 0.5, h * 0.66, w, h * 0.7)
-      ..lineTo(w, h)
-      ..lineTo(0, h)
-      ..close();
-    canvas.drawPath(wave, Paint()..color = const Color(0xFFFE2C55));
-    final cyan = Path()
-      ..moveTo(0, h * 0.73)
-      ..quadraticBezierTo(w * 0.35, h * 0.69, w * 0.6, h * 0.69)
-      ..lineTo(w * 0.6, h)
-      ..lineTo(0, h)
-      ..close();
-    canvas.drawPath(cyan, Paint()..color = const Color(0xFF25F4EE));
-    final strip = Path()
-      ..moveTo(0, h * 0.755)
-      ..quadraticBezierTo(w * 0.5, h * 0.69, w, h * 0.735)
-      ..lineTo(w, h)
-      ..lineTo(0, h)
-      ..close();
-    canvas.drawPath(strip, Paint()..color = Colors.white);
-
-    final tp = TextPainter(
-      text: TextSpan(
-        text: 'Studio',
-        style: TextStyle(
-          color: Colors.black,
-          fontSize: w * 0.19,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-      textDirection: TextDirection.ltr,
-    )..layout();
-    tp.paint(canvas, Offset((w - tp.width) / 2, h * 0.83));
-
-    // The note, drawn three times: cyan (down-left), red (up-right), white.
-    void note(Color c, Offset d) {
-      final stroke = Paint()
-        ..color = c
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = w * 0.085
-        ..strokeCap = StrokeCap.round
-        ..strokeJoin = StrokeJoin.round
-        ..isAntiAlias = true;
-      canvas.save();
-      canvas.translate(d.dx, d.dy);
-      // Ring of the note head.
-      canvas.drawCircle(Offset(w * 0.42, h * 0.5), w * 0.13, stroke);
-      // Stem and flag.
-      final stem = Path()
-        ..moveTo(w * 0.57, h * 0.5)
-        ..lineTo(w * 0.57, h * 0.2)
-        ..cubicTo(w * 0.6, h * 0.3, w * 0.68, h * 0.34, w * 0.76, h * 0.34);
-      canvas.drawPath(stem, stroke);
-      canvas.restore();
-    }
-
-    note(const Color(0xFF25F4EE), Offset(-w * 0.025, w * 0.025));
-    note(const Color(0xFFFE2C55), Offset(w * 0.025, -w * 0.02));
-    note(Colors.white, Offset.zero);
-  }
-
-  @override
-  bool shouldRepaint(_LogoPainter old) => false;
 }

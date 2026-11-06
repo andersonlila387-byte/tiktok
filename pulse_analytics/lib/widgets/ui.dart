@@ -9,7 +9,7 @@ class TkCard extends StatelessWidget {
   const TkCard({
     super.key,
     required this.child,
-    this.padding = const EdgeInsets.fromLTRB(14, 18, 14, 16),
+    this.padding = const EdgeInsets.fromLTRB(14, 20, 14, 16),
     this.margin = const EdgeInsets.only(bottom: 8),
   });
 
@@ -44,7 +44,7 @@ class CardTitle extends StatelessWidget {
     return Row(
       children: [
         Flexible(
-          child: Text(text, style: t(14.5, weight: FontWeight.w700, height: 1.2)),
+          child: Text(text, style: t(14.2, weight: FontWeight.w700, height: 1.2)),
         ),
         if (info) ...[
           const SizedBox(width: 4),
@@ -68,7 +68,7 @@ class BodyText extends StatelessWidget {
     return Text(
       text,
       textAlign: align,
-      style: t(11, color: color ?? AppColors.muted, height: 1.3),
+      style: t(10.8, color: color ?? AppColors.muted, height: 1.3),
     );
   }
 }

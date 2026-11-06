@@ -16,7 +16,7 @@ class TabPage extends StatelessWidget {
             handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
           ),
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(7, 7.5, 7, 24),
+            padding: const EdgeInsets.fromLTRB(7, 6, 7, 24),
             sliver: SliverList(delegate: SliverChildListDelegate(children)),
           ),
         ],

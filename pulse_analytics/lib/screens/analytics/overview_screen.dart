@@ -132,7 +132,11 @@ class _KeyMetricsCardState extends State<_KeyMetricsCard> {
                               tiles[i].$1,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: t(11, height: 1.2),
+                              style: t(
+                                11,
+                                weight: FontWeight.w500,
+                                height: 1.2,
+                              ),
                             ),
                             const SizedBox(height: 5),
                             FittedBox(

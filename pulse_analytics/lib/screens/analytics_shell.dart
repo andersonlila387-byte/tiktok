@@ -155,7 +155,7 @@ class _TopBar extends StatelessWidget {
                     const SizedBox(width: 1),
                     Text(
                       'TikTok Studio',
-                      style: t(10.25, weight: FontWeight.w400),
+                      style: t(10.25, weight: FontWeight.w500),
                     ),
                   ],
                 ),

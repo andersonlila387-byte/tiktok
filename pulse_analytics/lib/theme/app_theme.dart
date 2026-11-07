@@ -45,6 +45,7 @@ TextStyle t(
   FontWeight weight = FontWeight.w400,
   Color color = AppColors.text,
   double? height,
+  double? spacing,
 }) {
   if (!useBrandFont) {
     return TextStyle(
@@ -52,6 +53,7 @@ TextStyle t(
       fontWeight: weight,
       color: color,
       height: height,
+      letterSpacing: spacing,
     );
   }
   return GoogleFonts.roboto(
@@ -59,6 +61,7 @@ TextStyle t(
     fontWeight: weight,
     color: color,
     height: height,
+    letterSpacing: spacing,
   );
 }
 

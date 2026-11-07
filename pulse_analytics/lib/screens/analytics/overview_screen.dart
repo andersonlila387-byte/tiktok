@@ -133,9 +133,10 @@ class _KeyMetricsCardState extends State<_KeyMetricsCard> {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: t(
-                                11,
-                                weight: FontWeight.w500,
-                                height: 1.2,
+                                11.4,
+                                weight: FontWeight.w600,
+                                height: 1.16,
+                                spacing: -0.11,
                               ),
                             ),
                             const SizedBox(height: 5),
